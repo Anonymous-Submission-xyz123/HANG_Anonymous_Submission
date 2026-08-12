@@ -9,22 +9,22 @@ import argparse
 
 # Nvidia Integrate API endpoint for Nemotron Nano
 API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-HEADERS = {
-    "Content-Type": "application/json",
-    "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
-}
+
+
+def request_headers():
+    api_key = os.environ.get("NVIDIA_API_KEY")
+    if not api_key:
+        raise RuntimeError("NVIDIA_API_KEY is required")
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
 CODE_DIR = os.path.join(PROJECT_ROOT, "dataset", "php-webshells", "Collection_extended")
 COMMENT_DIR = os.path.join(os.path.dirname(BASE_DIR), "Experiment_1", "business_comment")
 FORGERY_DIR = os.path.join(os.path.dirname(BASE_DIR), "Experiment_1", "thinking_forgery")
-
-YAML_PATH = os.path.join(
-    os.path.dirname(BASE_DIR),
-    "baselines",
-    "cot_forgery_prompt.yaml",
-)
 
 def load_text(path):
     if not os.path.exists(path):
@@ -62,7 +62,12 @@ def generate_forgery(base_messages, user_input):
 
     for attempt in range(5):
         try:
-            r = requests.post(API_URL, headers=HEADERS, json=payload, timeout=90)
+            r = requests.post(
+                API_URL,
+                headers=request_headers(),
+                json=payload,
+                timeout=90,
+            )
             r.raise_for_status()
             res = r.json()
             choices = res.get("choices", [])
@@ -81,14 +86,18 @@ def generate_forgery(base_messages, user_input):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Semantic CoT Forgeries using Nemotron Nano")
     parser.add_argument("--limit", type=int, default=10, help="Limit number of files to process")
+    parser.add_argument(
+        "--prompt",
+        required=True,
+        help="Path to the external CoT Forgery prompt YAML",
+    )
     args = parser.parse_args()
 
     os.makedirs(FORGERY_DIR, exist_ok=True)
 
-    base_prompt_yaml = load_text(YAML_PATH)
+    base_prompt_yaml = load_text(args.prompt)
     if not base_prompt_yaml:
-        print(f"Error: Yaml file not found at {YAML_PATH}")
-        sys.exit(1)
+        parser.error(f"prompt YAML not found: {args.prompt}")
 
     base_messages = yaml.safe_load(base_prompt_yaml)
 

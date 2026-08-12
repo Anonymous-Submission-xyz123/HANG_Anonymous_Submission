@@ -11,8 +11,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 
-from powershell_baseline_common import configure_provider
-
 
 CSV_FIELDS = [
     "model_name",
@@ -41,6 +39,37 @@ MODEL_CONFIGS = {
         16384,
     ),
 }
+
+
+def configure_provider(provider):
+    if provider == "nvidia":
+        api_key = os.environ.get("NVIDIA_API_KEY")
+        if not api_key:
+            raise RuntimeError("NVIDIA_API_KEY is required for NVIDIA-hosted models")
+        return (
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+        )
+
+    if provider == "minimax":
+        api_key = os.environ.get("MINIMAX_API_KEY")
+        if not api_key:
+            raise RuntimeError("MINIMAX_API_KEY is required for MiniMax models")
+        return (
+            os.environ.get(
+                "MINIMAX_BASE_URL",
+                "https://api.minimax.io/v1/text/chatcompletion_v2",
+            ),
+            {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+        )
+
+    raise ValueError(f"Unsupported provider: {provider}")
 
 csv_lock = threading.Lock()
 checkpoint_lock = threading.Lock()

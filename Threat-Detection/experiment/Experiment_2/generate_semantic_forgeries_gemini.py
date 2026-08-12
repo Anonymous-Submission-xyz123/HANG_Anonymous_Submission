@@ -17,12 +17,6 @@ CODE_DIR = os.path.join(PROJECT_ROOT, "dataset", "php-webshells", "Collection_ex
 COMMENT_DIR = os.path.join(os.path.dirname(BASE_DIR), "Experiment_1", "business_comment")
 FORGERY_DIR = os.path.join(os.path.dirname(BASE_DIR), "Experiment_1", "thinking_forgery")
 
-YAML_PATH = os.path.join(
-    os.path.dirname(BASE_DIR),
-    "baselines",
-    "cot_forgery_prompt.yaml",
-)
-
 def load_text(path):
     if not os.path.exists(path):
         return None
@@ -113,14 +107,18 @@ if __name__ == "__main__":
     parser.add_argument("--key", type=str, required=True, help="Google AI Studio API Key")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help="Gemini model name")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of files to process")
+    parser.add_argument(
+        "--prompt",
+        required=True,
+        help="Path to the external CoT Forgery prompt YAML",
+    )
     args = parser.parse_args()
 
     os.makedirs(FORGERY_DIR, exist_ok=True)
 
-    base_prompt_yaml = load_text(YAML_PATH)
+    base_prompt_yaml = load_text(args.prompt)
     if not base_prompt_yaml:
-        print(f"Error: Yaml file not found at {YAML_PATH}")
-        sys.exit(1)
+        parser.error(f"prompt YAML not found: {args.prompt}")
 
     base_messages = yaml.safe_load(base_prompt_yaml)
 

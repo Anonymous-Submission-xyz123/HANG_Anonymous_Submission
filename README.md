@@ -1,109 +1,149 @@
-# Harvested Adversarial Neural Guidance
+# HANG Reproduction Artifact
 
-Anonymous artifact for **Harvested Adversarial Neural Guidance: Borrowed
-Thoughts, Stolen Decisions**.
+Code and data for **Harvested Adversarial Neural Guidance: Borrowed Thoughts,
+Stolen Decisions**. This README is the execution index; experiment-specific
+details are in each module README.
 
-HANG is a reasoning-channel injection attack. An attacker operates a
-trace-exposing surrogate reasoning model under an attacker-defined permissive
-policy, retains the reasoning trace from a successful surrogate run, and
-transplants that trace into attacker-controlled context processed by a target
-model. The target is not queried while the attack payload is constructed.
+## Reproduction Map
 
-This repository contains the code and data used for the paper's two evaluation
-settings:
-
-- **Threat-detection evasion:** webshell, phishing-email, and PowerShell
-  classifiers are steered toward benign verdicts.
-- **Active execution hijacking:** tool-integrated agents are steered toward
-  benchmark-specified unauthorized tool trajectories.
-
-It also contains the white-box analyses used to study controlled conclusion
-effects, marker ablations, answer-state alignment, and attention reallocation.
-
-## Terminology
-
-The following names are used consistently throughout this artifact:
-
-- **HANG trace / harvested trace:** reasoning emitted by a surrogate during a
-  successful attacker-aligned task completion.
-- **Surrogate:** the trace-exposing model operated under the attacker's policy.
-- **Target:** the model evaluated after the harvested trace is transplanted.
-- **Matched-model evaluation:** surrogate and target use the same model version
-  under different policies. This is an experimental control, not a requirement
-  of HANG.
-- **Cross-model transfer:** a harvested trace is replayed unchanged against a
-  target from another model family.
-- **CoT Forgery:** the synthesized-trace baseline from prior work. It is not an
-  alternate name for HANG.
-
-## Artifact Map
-
-| Paper component | Artifact location | Purpose |
+| Paper section | Directory | Reproduces |
 | --- | --- | --- |
-| Sections 5-6, Appendices A-B and D | [`Threat-Detection/`](Threat-Detection/) | Datasets, trace harvesting, baselines, target evaluation, and robustness variants |
-| Section 7 and Appendix C | [`Mechanistic-Analysis/`](Mechanistic-Analysis/) | Controlled conclusion interventions and white-box diagnostics |
-| Section 8 and Appendix E | [`Active-Execution-Hijacking/`](Active-Execution-Hijacking/) | HANG adaptation of the InjecAgent benchmark |
+| Sections 5-6, Appendices A-B and D | [`Threat-Detection/`](Threat-Detection/) | Webshell, phishing, and PowerShell evasion |
+| Section 7, Appendix C | [`Mechanistic-Analysis/`](Mechanistic-Analysis/) | Controlled conclusions, marker ablation, representations, and attention |
+| Section 8, Appendix E | [`Active-Execution-Hijacking/`](Active-Execution-Hijacking/) | InjecAgent tool-use hijacking |
 
-Each module has its own setup, data map, and reproduction instructions. Run
-commands from the module directory unless its README says otherwise.
+Use Python 3.10 or newer. Run each module in a separate virtual environment.
+Model weights and external baseline prompt assets are not bundled.
 
-## Quick Start
+## 1. Mechanistic Analysis
 
-Python 3.10 or newer is recommended. Create separate environments for the
-mechanistic and API-based experiments because the former requires a local
-PyTorch model while the latter uses several provider SDKs.
+The repository includes six exact GPT-OSS-20B API inputs, their payloads,
+harvested traces, and target system prompt. These provide a compact execution
+check. The paper's principal controlled-conclusion estimates use 30 payloads.
 
 ```bash
-git clone https://github.com/Anonymous-Submission-xyz123/HANG_Anonymous_Submission.git
-cd HANG_Anonymous_Submission
-
+cd Mechanistic-Analysis
 python -m venv .venv
 source .venv/bin/activate
-pip install -r Mechanistic-Analysis/requirements.txt
-
-cd Mechanistic-Analysis
-python scripts/run_hang_api_exact_6.py --help
+pip install -r requirements.txt
+export PYTHONPATH="$PWD"
+export HANG_MODEL_PATH=/path/to/gpt-oss-20b
 ```
 
-The bundled six-case data supports a local smoke reproduction of the
-GPT-OSS-20B analysis. Full API evaluations require the relevant provider
-credentials; copy [`.env.example`](.env.example) to a local `.env` or export the
-variables in your shell. Never commit credentials.
+Reproduce the six target runs:
 
-## Reproducibility Scope
+```bash
+python scripts/run_hang_api_exact_6.py \
+  --model-path "$HANG_MODEL_PATH" \
+  --output outputs/hang_api_exact_6_20b
+```
 
-The repository distinguishes three kinds of artifact:
+Compute mechanism metrics:
 
-- **Source data and fixed subsets** are stored under `dataset/`, `data/`, or
-  module-specific subset files.
-- **Harvested traces and raw model responses** are stored alongside their
-  corresponding experiment when redistribution is permitted.
-- **Generated outputs** are written to `outputs/` or `results/` and are not
-  treated as source code.
+```bash
+python scripts/run_hang_api_exact_mechanism_metrics.py \
+  --records-dir outputs/hang_api_exact_6_20b/records \
+  --model-path "$HANG_MODEL_PATH" \
+  --output outputs/hang_api_exact_mechanism_package_20b
+```
 
-Remote-provider model behavior can change after the paper's June-July 2026
-evaluation window. The paper records provider model identifiers, temperatures,
-token limits, and other inference settings in Appendix B. A reproduction should
-record the date and resolved provider model version in addition to those
-settings.
+Run the marker and representation checks:
 
-## Safety and Responsible Use
+```bash
+python scripts/run_hang_marker_ablation_6.py \
+  --model-path "$HANG_MODEL_PATH" \
+  --output outputs/hang_marker_ablation_6_20b
 
-This artifact contains malicious code samples, phishing content, adversarial
-prompts, and examples of unauthorized tool-use objectives. Experiments must be
-run in an isolated research environment. Do not execute dataset artifacts, aim
-the attack at deployed services without authorization, or connect the agentic
-benchmark to tools that can affect real accounts or systems. See
-[`SECURITY.md`](SECURITY.md) for handling and disclosure guidance.
+python scripts/run_hang_marker_consistency_repr_probe.py \
+  --records-dir outputs/hang_marker_ablation_6_20b/records \
+  --model-path "$HANG_MODEL_PATH" \
+  --output outputs/hang_marker_consistency_repr_probe_20b
+```
 
-## Attribution and License
+Outputs are written under `outputs/<run>/records`, `tables`, and `figures`.
 
-The active-execution module is derived from InjecAgent and retains its upstream
-MIT license and attribution in
-[`Active-Execution-Hijacking/LICENCE`](Active-Execution-Hijacking/LICENCE).
-No project-wide license is asserted by this anonymous artifact. Add the final
-project license before the archival release.
+## 2. Active Execution Hijacking
 
-For anonymous review, cite the submitted paper by title. Author metadata and a
-final citation record should be added only after the review process permits
-de-anonymization.
+```bash
+cd Active-Execution-Hijacking
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export PYTHONPATH="$PWD"
+```
+
+Rebuild the released action-specific manifest:
+
+```bash
+python -m src.build_trace_manifest \
+  --output data/harvested_traces_template.json
+```
+
+Harvest traces from a surrogate, for example GPT-OSS-20B:
+
+```bash
+export NVIDIA_API_KEY=...
+python -m src.harvest_traces_gpt20b
+```
+
+Evaluate the same trace mapping on a target:
+
+```bash
+python -m src.evaluate_prompted_agent \
+  --model_type GPT \
+  --model_name openai/gpt-oss-20b \
+  --setting base \
+  --prompt_type InjecAgent \
+  --attack_method hang \
+  --harvested_trace_path data/harvested_traces_gpt20b.json \
+  --num_workers 4
+```
+
+Expected dataset sizes are 510 direct-harm cases and 544 data-stealing cases.
+Results are written under `results/`.
+
+## 3. Threat-Detection Evasion
+
+```bash
+cd Threat-Detection
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export NVIDIA_API_KEY=...
+```
+
+Run one GPT-OSS-20B evaluation per domain:
+
+```bash
+# Webshell
+python experiment/Experiment_2/experiment_2_gen_thinking_duplicate_gpt-oss-20b-high.py \
+  --config IMPORTANT-BUSINESS-CORE --system_prompt prompt_A_en \
+  --think_prompt A2 --runs 1
+
+# Phishing
+python experiment/Experiment_2_phishing/experiment_2_gen_thinking_duplicate_gpt-oss-20b-high.py \
+  --config IMPORTANT-BUSINESS-CORE --system_prompt prompt_A_en \
+  --think_prompt A2 --runs 1
+
+# PowerShell
+python experiment/Experiment_2_powershell/experiment_2_gen_thinking_duplicate.py \
+  --model-key gpt_oss_20b --config IMPORTANT-BUSINESS-CORE \
+  --system_prompt prompt_A_en --think_prompt A2 --runs 1 --workers 3
+```
+
+Surrogate generation uses temperature `0.7`. Target evaluation uses
+temperature `0.15` and `top_p=0.6`. Raw CSVs are the source records; summary
+CSVs are derived outputs. See [`Threat-Detection/README.md`](Threat-Detection/README.md)
+for model-specific runners and dataset provenance.
+
+## Manifest Check
+
+```bash
+(cd Active-Execution-Hijacking && \
+  python -m src.build_trace_manifest --output /tmp/hang_manifest.json)
+```
+
+The manifest contains 62 action-specific entries: 30 direct-harm and 32
+data-stealing instruction-tool pairs.
+
+Treat all threat-detection samples as untrusted text; do not execute them.
