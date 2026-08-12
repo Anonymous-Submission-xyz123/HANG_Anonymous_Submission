@@ -104,6 +104,9 @@ Results are written under `results/`.
 
 ## 3. Threat-Detection Evasion
 
+The released Appendix A evaluation sets contain 594 webshells, 1,000 phishing
+emails, and 901 PowerShell scripts.
+
 ```bash
 cd Threat-Detection
 python -m venv .venv

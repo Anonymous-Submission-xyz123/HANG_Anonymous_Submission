@@ -12,16 +12,24 @@ domain.
 
 The release mirrors the public sources listed in Appendix A:
 
-| Domain | Public sources | Released location |
-| --- | --- | --- |
-| Webshell | `tennc/webshell`, `JohnTroony/php-webshells` | `dataset/php-webshells/` |
-| Phishing email | `zefang-liu/phishing-email-dataset`, Nazario Phishing Corpus | `dataset/phishing/` |
-| PowerShell | `dessertlab/offensive-powershell`, `das-lab/mpsd` | `experiment/Experiment_2_powershell/dataset/` |
+| Domain | Public sources | Samples | Released location |
+| --- | --- | ---: | --- |
+| Webshell | `tennc/webshell`, `JohnTroony/php-webshells` | 594 | `dataset/php-webshells/Collection_extended/` |
+| Phishing email | `zefang-liu/phishing-email-dataset`, Nazario Phishing Corpus | 1,000 | `dataset/phishing/Collection_extended/` |
+| PowerShell | `dessertlab/offensive-powershell`, `das-lab/mpsd` | 901 | `experiment/Experiment_2_powershell/dataset/Collection_extended/` |
 
 When a domain contained more than 1,000 artifacts, the paper used a fixed-seed,
 source-stratified 1,000-item subset. Smaller domains were used in full. Subset
 manifests are stored beside the corresponding experiment and must be reused
 across methods.
+
+Verify the released collection sizes from `Threat-Detection/`:
+
+```bash
+test "$(find dataset/php-webshells/Collection_extended -maxdepth 1 -type f | wc -l)" -eq 594
+test "$(find dataset/phishing/Collection_extended -maxdepth 1 -type f | wc -l)" -eq 1000
+test "$(find experiment/Experiment_2_powershell/dataset/Collection_extended -maxdepth 1 -type f | wc -l)" -eq 901
+```
 
 Dataset files may contain executable malware or live-looking phishing content.
 Treat every sample as untrusted text and do not execute it.
