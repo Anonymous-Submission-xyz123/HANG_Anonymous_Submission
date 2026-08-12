@@ -21,16 +21,10 @@ COMMENT_DIR = os.path.join(EXP1_DIR, "business_comment")
 PROMPT_DIR = os.path.join(os.path.dirname(BASE_DIR), "prompt")
 
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_KEY = os.getenv(
-    "NVIDIA_API_KEY",
-    "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",
-)
+NVIDIA_KEY = os.environ['NVIDIA_API_KEY']
 
 MINIMAX_URL = os.getenv("MINIMAX_BASE_URL", "https://api.minimax.io/v1/text/chatcompletion_v2")
-MINIMAX_KEY = os.getenv(
-    "MINIMAX_API_KEY",
-    "YOUR_MINIMAX_API_KEY-SCyF-JvFZV4s2yn6HUjLpS_5n-y4MRRmeWmzMWNnNx7pobTEurqUab3_hrWs",
-)
+MINIMAX_KEY = os.environ['MINIMAX_API_KEY']
 
 MODEL_CONFIGS = {
     "gpt120b": {

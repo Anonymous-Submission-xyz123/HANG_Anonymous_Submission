@@ -10,10 +10,7 @@ from typing import Dict, Optional
 from .schemas import TokenSpans, RunRecord
 
 
-OVERNIGHT_BASE_DIR = Path(
-    "/home/huynp2/gpt_oss_lens/outputs/hang_overnight_20b/runs/"
-    "openai_gpt-oss-20b/hang_overnight_20b"
-)
+OVERNIGHT_BASE_DIR = Path("outputs/hang_overnight_20b/runs/openai_gpt-oss-20b/hang_overnight_20b")
 
 
 @dataclass

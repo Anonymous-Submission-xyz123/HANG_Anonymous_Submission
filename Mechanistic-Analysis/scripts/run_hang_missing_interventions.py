@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
+import os
 import random
 import sys
 from datetime import datetime, timezone
@@ -33,11 +34,7 @@ from hang.interventions import HANGInterventions
 from hang.model_adapter import ModelRunResult, HANGModelAdapter
 
 
-DEFAULT_MODEL_PATH = (
-    "/home/huynp2/.cache/huggingface/hub/"
-    "models--openai--gpt-oss-20b/snapshots/"
-    "6cee5e81ee83917806bbde320786a8fb61efebee"
-)
+DEFAULT_MODEL_PATH = os.environ.get("HANG_MODEL_PATH", "openai/gpt-oss-20b")
 
 DEFAULT_CASES = [
     "AK-74",

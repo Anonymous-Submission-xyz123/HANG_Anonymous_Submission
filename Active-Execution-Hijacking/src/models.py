@@ -50,8 +50,8 @@ class GPTModel(BaseModel):
             self.client = None
         elif model_name in {"deepseek-ai/deepseek-v4-flash", "qwen3.7-plus"}:
             self.client = OpenAI(
-                base_url="https://dafud.tunaonthesea.ovh/v1",
-                api_key=os.environ.get("CUSTOM_API_KEY"),
+                base_url=os.environ["CUSTOM_BASE_URL"],
+                api_key=os.environ["CUSTOM_API_KEY"],
                 default_headers={
                     "User-Agent": "kilo-editor/1.0",
                     "Accept": "application/json",

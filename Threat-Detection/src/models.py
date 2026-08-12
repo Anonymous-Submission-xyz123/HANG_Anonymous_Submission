@@ -1,10 +1,11 @@
+import os
 import requests
 
-URL = "https://secagi.viettelsecurity.com/models/routing/responses"
+URL = os.environ['CUSTOM_RESPONSES_URL']
 HEADERS = {
     "Accept": "application/json, text/plain, */*",
     "Content-Type": "application/json",
-    "Authorization": "Bearer sk-tLAgjRZA_XSj76wsz1qBhQ",
+    "Authorization": f"Bearer {os.environ['CUSTOM_API_KEY']}",
     "User-Agent": "axios/1.11.0",
 }
 

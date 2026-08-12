@@ -4,9 +4,10 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
-BASE_DIR = "/home/pndhpndh/CoT_Viettel/prompt_inj/experiment/Experiment_2"
-LOG_PATH = os.path.join(BASE_DIR, "cross_model_best_trace_subset150_queue.log")
+BASE_DIR = Path(__file__).resolve().parent
+LOG_PATH = BASE_DIR / "cross_model_best_trace_subset150_queue.log"
 
 JOBS = [
     "gpt120b",

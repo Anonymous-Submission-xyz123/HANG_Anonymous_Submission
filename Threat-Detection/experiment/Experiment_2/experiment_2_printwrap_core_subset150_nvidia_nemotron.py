@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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",
+    "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
 }
 
 CSV_FIELDS = [

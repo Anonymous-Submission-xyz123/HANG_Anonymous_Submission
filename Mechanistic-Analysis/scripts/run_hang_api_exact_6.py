@@ -28,6 +28,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
 from hang.evaluator import HANGEvaluator
 
 
+ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = ROOT / "data"
 CASES = [
     "AK-74",
     "CasuS-1.5",
@@ -37,7 +39,7 @@ CASES = [
     "Ajax_PHP_Command_Shell",
 ]
 
-CORPUS = Path("/home/huynp2/prompt_inj_api/dataset/php-webshells/Collection_clean")
+CORPUS = DATA_DIR / "payloads"
 
 
 def token_span_for_char_span(offsets: list[tuple[int, int]], start: int, end: int) -> list[int]:
@@ -82,7 +84,7 @@ def extract_final_channel(raw_output: str) -> str:
 
 def find_trace_split(case_id: str, user_input: str, thinking_dir: Path) -> tuple[int, int]:
     """Return character span [start, end) of the appended thinking trace."""
-    candidates = sorted(
+    candidates = [thinking_dir / f"{case_id}.txt"] + sorted(
         thinking_dir.glob(
             f"*(A2)*({case_id})*(IMPORTANT-BUSINESS-CORE)*openai-gpt-oss-20b think.txt"
         )
@@ -264,9 +266,9 @@ def run_one(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--csv", default="/home/huynp2/prompt_inj_api/experiment/Experiment_2/results_gpt-oss-20b-high-comment.csv")
-    parser.add_argument("--system-prompt", default="/home/huynp2/prompt_inj_api/experiment/prompt/prompt_A_en.txt")
-    parser.add_argument("--thinking-dir", default="/home/huynp2/prompt_inj_api/experiment/Experiment_1/thinking")
+    parser.add_argument("--csv", default=DATA_DIR / "api_exact_6.csv")
+    parser.add_argument("--system-prompt", default=DATA_DIR / "system_prompt.txt")
+    parser.add_argument("--thinking-dir", default=DATA_DIR / "traces")
     parser.add_argument("--output", default="outputs/hang_api_exact_6_20b")
     parser.add_argument("--model", default="openai/gpt-oss-20b")
     parser.add_argument(
@@ -293,7 +295,7 @@ def main() -> None:
 
     model_load_name = args.model_path or args.model
     print(f"[api-exact] loading tokenizer: {model_load_name}")
-    tokenizer = AutoTokenizer.from_pretrained(model_load_name, local_files_only=True, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_load_name, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     print(f"[api-exact] loading model: {model_load_name}")
@@ -301,7 +303,6 @@ def main() -> None:
         model_load_name,
         dtype=torch.bfloat16,
         device_map="auto",
-        local_files_only=True,
         trust_remote_code=True,
     )
     model.eval()

@@ -17,7 +17,7 @@ import math
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.plot_imported_decision_priors_suite import (  # noqa: E402
+from scripts.figure_utils import (  # noqa: E402
     GRAY,
     INK,
     MUTED,
@@ -41,12 +41,8 @@ from scripts.plot_imported_decision_priors_suite import (  # noqa: E402
     rank_correlation,
     style,
 )
+from scripts.figure_utils import METHOD_LABELS, METHODS  # noqa: E402
 from scripts.plot_hang_trace_provenance_figures import plot_03, plot_07  # noqa: E402
-from scripts.run_hang_trace_provenance_comparison import (  # noqa: E402
-    METHOD_LABELS,
-    METHODS,
-    outcome_effects,
-)
 
 
 MARKER_RE = re.compile(
@@ -68,6 +64,34 @@ NOT_WEBSHELL_RE = re.compile(
     r"\bnon[-\s]?webshell\b",
     re.IGNORECASE,
 )
+
+
+def outcome_effects(score_rows: Sequence[dict[str, Any]]) -> pd.DataFrame:
+    """Compute semantic effects relative to each method's literal-label control."""
+    frame = pd.DataFrame(score_rows)
+    pivot = frame.pivot_table(
+        index=["case_id", "method", "method_label", "control"],
+        columns="trace_outcome",
+        values="margin",
+        aggfunc="first",
+    ).reset_index()
+    if not {"Clean", "Webshell"}.issubset(pivot.columns):
+        raise ValueError("score rows are missing controlled outcomes")
+    pivot["outcome_effect"] = pivot["Clean"] - pivot["Webshell"]
+    literal = pivot[pivot["control"] == "literal"].rename(
+        columns={"outcome_effect": "literal_reference_outcome_effect"}
+    )
+    indirect = pivot[pivot["control"] == "indirect"]
+    merged = indirect.merge(
+        literal[["case_id", "method", "literal_reference_outcome_effect"]],
+        on=["case_id", "method"],
+        how="inner",
+    )
+    merged["absolute_retained_fraction"] = (
+        merged["outcome_effect"].abs()
+        / merged["literal_reference_outcome_effect"].abs()
+    )
+    return merged
 
 
 def parse_args() -> argparse.Namespace:
@@ -474,7 +498,7 @@ def plot_schema_vs_semantic(
     figure.text(
         0.5,
         0.005,
-        "marker and trace length held fixed - bypass-derived vs synthesized CoT Forgery traces",
+        "marker and trace length held fixed - harvested HANG vs synthesized CoT Forgery traces",
         ha="center",
         va="bottom",
         fontsize=8,

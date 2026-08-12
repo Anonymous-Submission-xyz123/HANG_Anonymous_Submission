@@ -5,12 +5,12 @@ forces the model through the already-generated continuation and compares hidden
 states at answer/content tokens to hidden states for:
 
 - actual payload marker occurrences;
-- marker mentions inside the forged trace;
-- forged rule/conclusion text inside the trace;
+- marker mentions inside the transplanted trace;
+- attacker-selected rule/conclusion text inside the trace;
 - webshell-evidence tokens inside the payload.
 
-The goal is to distinguish "the model looked at the forged trace" from "the
-model grounded or rejected the forged rule against payload evidence".
+The goal is to distinguish "the model looked at the transplanted trace" from
+"the model grounded or rejected the attacker-selected rule against payload evidence".
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import re
 from pathlib import Path
 
@@ -26,11 +27,7 @@ import torch
 import torch.nn.functional as F
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-DEFAULT_MODEL_PATH = (
-    "/home/huynp2/.cache/huggingface/hub/"
-    "models--openai--gpt-oss-20b/snapshots/"
-    "6cee5e81ee83917806bbde320786a8fb61efebee"
-)
+DEFAULT_MODEL_PATH = os.environ.get("HANG_MODEL_PATH", "openai/gpt-oss-20b")
 
 DANGEROUS_PATTERNS = [
     "proc_open",
@@ -300,7 +297,7 @@ def main():
     tables.mkdir(parents=True, exist_ok=True)
 
     print(f"[repr-grounding] loading tokenizer {args.model_path}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path, local_files_only=True, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     print(f"[repr-grounding] loading model {args.model_path}")
@@ -308,7 +305,6 @@ def main():
         args.model_path,
         dtype=torch.bfloat16,
         device_map="auto",
-        local_files_only=True,
         trust_remote_code=True,
         attn_implementation="eager",
     )
@@ -318,8 +314,8 @@ def main():
     for path in sorted(Path(args.records_dir).glob("*.json")):
         record = json.loads(path.read_text(encoding="utf-8"))
         if record["condition"] not in {
-            "marker_plus_forged_trace",
-            "no_marker_plus_forged_trace",
+            "marker_plus_harvested_trace",
+            "no_marker_plus_harvested_trace",
             "nothing",
         }:
             continue

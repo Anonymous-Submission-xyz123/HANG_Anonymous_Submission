@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.plot_imported_decision_priors_suite import (  # noqa: E402
+from scripts.figure_utils import (  # noqa: E402
     BLUE,
     GRAY,
     GRAY_LIGHT,
@@ -38,10 +38,7 @@ from scripts.plot_imported_decision_priors_suite import (  # noqa: E402
     style,
     title_block,
 )
-from scripts.run_hang_trace_provenance_comparison import (  # noqa: E402
-    METHOD_LABELS,
-    METHODS,
-)
+from scripts.figure_utils import METHOD_LABELS, METHODS  # noqa: E402
 
 
 DEFAULT_ARTIFACTS = ROOT / "outputs/hang_trace_provenance_comparison_20b_v1"
@@ -235,7 +232,7 @@ def plot_03(retention: pd.DataFrame, output_dir: Path, dpi: int) -> list[Path]:
     title_block(
         figure,
         "Semantic conclusions shift the decision without literal label strings",
-        "Matched comparison of bypass-derived traces and synthesized CoT Forgery traces against their literal-label references.",
+        "Matched comparison of harvested HANG traces and synthesized CoT Forgery traces against their literal-label references.",
     )
     footer(
         figure,
@@ -284,7 +281,7 @@ def plot_04(delta: pd.DataFrame, output_dir: Path, dpi: int) -> list[Path]:
             loc="left",
         )
         axis.set_ylabel(
-            "Bypass-derived − synthesized\nabsolute attention mass"
+            "Harvested HANG - synthesized\nabsolute attention mass"
         )
         axis.set_xticks(subset["layer"])
         axis.grid(axis="y")
@@ -295,11 +292,11 @@ def plot_04(delta: pd.DataFrame, output_dir: Path, dpi: int) -> list[Path]:
     title_block(
         figure,
         "Trace provenance changes answer-formation attention routing",
-        "Signed matched differences between bypass-derived traces and synthesized CoT Forgery traces over generation steps 4–9.",
+        "Signed matched differences between harvested HANG traces and synthesized CoT Forgery traces over generation steps 4-9.",
     )
     footer(
         figure,
-        "Six matched payloads • marker and trace length held fixed • positive = more attention under bypass-derived traces • shaded band = layers 10–16",
+        "Six matched payloads - marker and trace length held fixed - positive = more attention under harvested HANG traces - shaded band = layers 10-16",
     )
     figure.subplots_adjust(top=0.84, bottom=0.10, left=0.11, right=0.97, hspace=0.30)
     return save_figure(figure, output_dir, "04_attention_reallocation_by_layer", dpi)
@@ -514,7 +511,7 @@ def main() -> None:
         manifest_rows.append(
             {
                 "figure": "03_no_literal_label_control",
-                "comparison": "Bypass-derived vs synthesized (CoT Forgery)",
+                "comparison": "Harvested HANG vs synthesized (CoT Forgery)",
                 "scope": (
                     f"{retention['case_id'].nunique()} matched payloads "
                     "× 2 trace origins"
@@ -526,7 +523,7 @@ def main() -> None:
         manifest_rows.append(
             {
                 "figure": "04_attention_reallocation_by_layer",
-                "comparison": "Bypass-derived minus synthesized (CoT Forgery)",
+                "comparison": "Harvested HANG minus synthesized (CoT Forgery)",
                 "scope": "matched payloads, generation steps 4–9",
                 "source": str(attention_path),
             }
@@ -535,7 +532,7 @@ def main() -> None:
         manifest_rows.append(
             {
                 "figure": "07_margin_expression_dose_response",
-                "comparison": "Bypass-derived vs synthesized (CoT Forgery)",
+                "comparison": "Harvested HANG vs synthesized (CoT Forgery)",
                 "scope": (
                     f"{len(prediction)} cells, "
                     f"{int(prediction['generation_count'].max())} generations per cell"

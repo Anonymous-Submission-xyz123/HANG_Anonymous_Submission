@@ -1,13 +1,24 @@
 import json
 import os
 import re
+from functools import lru_cache
 from src.prompts.generation_prompts import SYSTEM_MESSAGE, DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE, EXAMPLE
-from openai import OpenAI
 
-client = OpenAI(
-    base_url="https://integrate.api.nvidia.com/v1",
-    api_key="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"
-)
+
+@lru_cache(maxsize=1)
+def get_simulation_client():
+    """Create the auxiliary response-simulation client only when it is used."""
+    api_key = os.environ.get("NVIDIA_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "NVIDIA_API_KEY is required to simulate an uncached attacker-tool response"
+        )
+    from openai import OpenAI
+
+    return OpenAI(
+        base_url="https://integrate.api.nvidia.com/v1",
+        api_key=api_key,
+    )
 
 def get_score(output_files):
     dh_output_file = output_files['dh']
@@ -146,7 +157,7 @@ def get_simulated_attacker_tool_response(attacker_tool, attacker_tool_parameters
     
     prompt_filled = DS_ATTACKER_TOOL_RESPONSE_GEN_MESSAGE.format(example = EXAMPLE, attacker_tool = attacker_tool_des, tool_parameters = attacker_tool_parameters)
     
-    completion = client.chat.completions.create(
+    completion = get_simulation_client().chat.completions.create(
                     model="meta/llama-3.1-8b-instruct", 
                     messages=[
                         {"role": "system", "content":SYSTEM_MESSAGE},

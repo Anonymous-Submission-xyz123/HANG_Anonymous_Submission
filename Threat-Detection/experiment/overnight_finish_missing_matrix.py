@@ -70,7 +70,7 @@ def main():
     wait_for_pids(os.getenv("WAIT_PIDS", "").split(","), "current prerequisites")
 
     py = sys.executable
-    email = EXP_ROOT / "Experiment_2_phising"
+    email = EXP_ROOT / "Experiment_2_phishing"
     powershell = EXP_ROOT / "Experiment_2_powershell"
     webshell = EXP_ROOT / "Experiment_2"
 

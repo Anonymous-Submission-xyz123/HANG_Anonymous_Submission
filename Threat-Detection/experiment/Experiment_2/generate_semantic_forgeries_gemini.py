@@ -17,7 +17,11 @@ CODE_DIR = os.path.join(PROJECT_ROOT, "dataset", "php-webshells", "Collection_ex
 COMMENT_DIR = os.path.join(os.path.dirname(BASE_DIR), "Experiment_1", "business_comment")
 FORGERY_DIR = os.path.join(os.path.dirname(BASE_DIR), "Experiment_1", "thinking_forgery")
 
-YAML_PATH = "/home/pndhpndh/CoT_Viettel/prompt-injection-as-role-confusion/experiments/cot-forgery-chat-evals/prompts/forgery-prompt-openai-qualified.yaml"
+YAML_PATH = os.path.join(
+    os.path.dirname(BASE_DIR),
+    "baselines",
+    "cot_forgery_prompt.yaml",
+)
 
 def load_text(path):
     if not os.path.exists(path):

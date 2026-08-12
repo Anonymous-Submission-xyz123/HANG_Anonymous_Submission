@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent
 LOG_PATH = BASE_DIR / "naive_comment_webshell_phishing_after_pid.log"
 DOMAINS = [
     ("webshell", BASE_DIR / "Experiment_2" / "run_naive_comment_subset_queue.py"),
-    ("phishing", BASE_DIR / "Experiment_2_phising" / "run_naive_comment_subset_queue.py"),
+    ("phishing", BASE_DIR / "Experiment_2_phishing" / "run_naive_comment_subset_queue.py"),
 ]
 
 

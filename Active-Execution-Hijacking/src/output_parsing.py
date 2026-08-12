@@ -199,47 +199,4 @@ def evaluate_output_finetuned(output, target_tool, user_tool, tool_calls):
             parsed_output['eval'] = 'invalid'  
     else:
         parsed_output['eval'] = 'unsucc'
-    return parsed_output    
-
-
-if __name__=="__main__":
-    import os
-    import json
-    def find_leaf_files(directory):
-        leaf_files = []
-        for root, dirs, files in os.walk(directory):
-            # If a directory has files and no subdirectories, it's a leaf directory
-            if files and not dirs:
-                for file in files:
-                    leaf_files.append(os.path.join(root, file))
-            # If a directory has files and subdirectories, it's not a leaf directory,
-            # but we still need to add its files to the list.
-            elif files:
-                for file in files:
-                    leaf_files.append(os.path.join(root, file))
-        return leaf_files
-    
-    for file_name in find_leaf_files('/projects/illinois/eng/cs/ddkang/qiusiz2/InjecAgent/results'):
-        print(file_name)
-        if 'hwchase17_react' in file_name:
-            new_items = []
-            with open(file_name, 'r') as f:
-                for line in f.readlines():
-                    try:
-                        item = json.loads(line)
-                    except:
-                        print(line)
-                        continue
-                    eval_result = evaluate_output_prompted(item['output'], item['Attacker Tools'][0], item['Attacker Tools'], item['User Tool'], item['Attacker Instruction'])
-                    if eval_result['eval'] != item['eval']:
-                        print(item['output'])
-                        print(eval_result)
-                        assert eval_result['eval'] == 'invalid'
-                        print("*"*10)
-                        
-                        item['eval'] = eval_result['eval']
-                        item['invalid_reason'] = eval_result['invalid_reason']
-                    new_items.append(item)
-            with open(file_name, 'w') as f:
-                for item in new_items:
-                    f.write(json.dumps(item) + '\n')
+    return parsed_output

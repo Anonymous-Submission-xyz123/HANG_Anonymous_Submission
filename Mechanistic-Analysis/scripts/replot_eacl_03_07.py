@@ -1,22 +1,32 @@
+"""Render compact EACL versions of the trace-provenance figures."""
+
+import argparse
 import sys
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.ticker import FixedFormatter, FixedLocator, NullLocator
 
-ROOT = Path("/home/huynp2/gpt_oss_lens")
-sys.path.insert(0, str(ROOT))
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-from scripts.plot_imported_decision_priors_suite import (
-    BLUE, GRAY, GRAY_LIGHT, INK, MUTED, NAVY, ORANGE, PURPLE, PURPLE_LIGHT, TEAL, WHITE,
+from scripts.figure_utils import (  # noqa: E402
+    GRAY,
+    GRAY_LIGHT,
+    METHOD_LABELS,
+    METHODS,
+    NAVY,
+    ORANGE,
+    PURPLE,
+    TEAL,
+    WHITE,
     auc_score, fit_logistic, rank_correlation, save_figure, style
 )
-METHODS = ("bypass_derived", "synthesized_cot_forgery")
-METHOD_LABELS = {
-    "bypass_derived": "Bypass-derived (our method)",
-    "synthesized_cot_forgery": "Synthesized (CoT Forgery)",
-}
+
+DEFAULT_ARTIFACTS = ROOT / "outputs/hang_trace_provenance_comparison_20b_n30_v2_lenient_parser"
+DEFAULT_OUTPUT = ROOT / "outputs/hang_trace_provenance_figures_eacl"
 
 METHOD_STYLES = {
     "bypass_derived": (TEAL, "o", "-"),
@@ -26,6 +36,14 @@ METHOD_STYLES = {
 def finite_label(value: float, digits: int = 3) -> str:
     import math
     return f"{value:.{digits}f}" if math.isfinite(value) else "n/a"
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--artifacts-dir", type=Path, default=DEFAULT_ARTIFACTS)
+    parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--dpi", type=int, default=300)
+    return parser.parse_args()
 
 def plot_03_eacl(retention: pd.DataFrame, output_dir: Path, dpi: int) -> list[Path]:
     style()
@@ -174,8 +192,9 @@ def plot_07_eacl(prediction: pd.DataFrame, output_dir: Path, dpi: int) -> list[P
     return save_figure(figure, output_dir, "07_margin_expression_dose_response_eacl", dpi)
 
 def main():
-    artifacts_dir = ROOT / "outputs/hang_trace_provenance_comparison_20b_n30_v2_lenient_parser"
-    output_dir = ROOT / "outputs/hang_imported_decision_priors_figure_suite_n30_lenient_parser_eacl"
+    args = parse_args()
+    artifacts_dir = args.artifacts_dir
+    output_dir = args.output_dir
     output_dir.mkdir(parents=True, exist_ok=True)
 
     retention_path = artifacts_dir / "tables/trace_provenance_retention.csv"
@@ -184,8 +203,8 @@ def main():
     retention = pd.read_csv(retention_path)
     prediction = pd.read_csv(prediction_path)
 
-    p1 = plot_03_eacl(retention, output_dir, 300)
-    p2 = plot_07_eacl(prediction, output_dir, 300)
+    p1 = plot_03_eacl(retention, output_dir, args.dpi)
+    p2 = plot_07_eacl(prediction, output_dir, args.dpi)
     
     print(f"Saved EACL formatted plots to {output_dir}")
     print("Files:")

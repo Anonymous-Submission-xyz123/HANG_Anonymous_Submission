@@ -52,7 +52,7 @@ def load_text(path):
 
 def api_headers():
     return {
-        "Authorization": f"Bearer {os.getenv('CUSTOM_API_KEY', 'sk-45acc7dba459a313-fe8728-50b4f780')}",
+        "Authorization": f"Bearer {os.environ['CUSTOM_API_KEY']}",
         "Content-Type": "application/json",
         "User-Agent": "kilo-editor/1.0",
         "Accept": "application/json",
@@ -60,7 +60,7 @@ def api_headers():
 
 
 def call_model(messages, temperature, max_tokens=2048, timeout=180, retries=8):
-    url = os.getenv("CUSTOM_BASE_URL", "https://dafud.tunaonthesea.ovh/v1").rstrip("/") + "/chat/completions"
+    url = os.environ['CUSTOM_BASE_URL'].rstrip("/") + "/chat/completions"
     payload = {
         "model": MODEL_NAME,
         "messages": messages,

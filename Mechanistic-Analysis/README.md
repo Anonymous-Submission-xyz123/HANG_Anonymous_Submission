@@ -1,128 +1,130 @@
-# Mechanistic Analysis of Harvested Adversarial Neural Guidance (HANG)
+# Mechanistic Analysis
 
-This directory contains the core implementation and execution pipeline for the mechanistic analysis of **HANG**, investigating how autoregressive reasoning models behave when synthetic, pre-computed reasoning traces ("forged thinking") are injected into prompt contexts.
+Code and bundled inputs for Section 7 and Appendix C of **Harvested
+Adversarial Neural Guidance: Borrowed Thoughts, Stolen Decisions**.
 
----
+The paper asks whether the semantic conclusion carried by a harvested HANG
+trace changes the target's decision before answer generation. It uses matched
+prompt pairs, controlled terminal conclusions, literal-label removal, marker
+ablation, answer-state representation analysis, and a supporting attention
+comparison. The code in this directory is specific to those analyses.
 
-## Table of Contents
-- [1. Overview & Theoretical Framework](#1-overview--theoretical-framework)
-- [2. Directory & Package Structure](#2-directory--package-structure)
-- [3. How to Run & Reproduce](#3-how-to-run--reproduce)
-  - [Prerequisites & Setup](#prerequisites--setup)
-  - [Execution Pipeline](#execution-pipeline)
-  - [Visualization & Postprocessing](#visualization--postprocessing)
+## Claims and Scope
 
----
+The paper reports the following results:
 
-## 1. Overview & Theoretical Framework
+1. Changing only a trace's terminal conclusion shifts the GPT-OSS-20B
+   `Clean`-versus-`Webshell` decision margin.
+2. The shift remains positive after literal schema labels are replaced with
+   semantically equivalent, non-identical expressions.
+3. Removing the matching marker weakens but does not eliminate the controlled
+   conclusion effect.
+4. The controlled conclusion changes answer-state alignment in layers 10-16.
+5. In a six-payload comparison, harvested traces receive more full-context
+   attention than evaluated CoT-Forgery traces, primarily at the expense of
+   payload attention. The paper treats this as supporting evidence rather than
+   a complete causal account.
 
-### The Core Mechanism Thesis: Forged-Rationale Imprinting
-HANG operates via **forged-rationale imprinting**:
-> The injected reasoning trace installs a *virtual decision rule* (e.g., `IMPORTANT-BUSINESS-CORE => Clean`). During answer formation, task-attributable routing shifts toward this forged trace, shifting the model's continuation probability distribution toward the target output label (e.g., `Clean`).
+The bundled six-case inputs are a compact execution check for the local
+GPT-OSS-20B pipeline. The paper's principal controlled-conclusion and marker
+results use 30 payloads. Do not report six-case smoke-test statistics as the
+paper's 30-case estimates.
 
-### Key Mechanistic Insights
-1. **Virtual Rule Installation**: The forged trace carries the primary payload by embedding a pre-computed rationale into the model's reasoning context.
-2. **Routing Displacement**: Injected trace content captures task-attributable attention routing in middle-to-late transformer layers, displacing standard payload and system prompt routing.
-3. **Continuation Margin Shift**: The presence of the forged trace significantly increases the log-odds margin of attacker-desired continuations over defensive/refusal continuations (e.g., `Clean` vs `Webshell`).
-4. **Marker Stabilization**: Visible payload markers (e.g., `[IMPORTANT-BUSINESS-CORE]`) stabilize the behavior by making the forged rationale self-consistent with visible input evidence.
-
----
-
-## 2. Directory & Package Structure
-
-The codebase is organized into the modular `hang/` library (providing core mechanics, dataset engines, and activation adapters) and execution scripts in `scripts/`.
+## Layout
 
 ```text
 Mechanistic-Analysis/
-├── README.md                                # Project documentation
-├── requirements.txt                         # Python dependencies
-├── hang/                                    # Core Python Mechanistic Library
-│   ├── analysis.py                          # Attention mass, logit shifts, and representation probes
-│   ├── cache.py                             # Activation cache disk-persistence manager
-│   ├── dataset.py                           # Dataset loading & strict control selection
-│   ├── evaluator.py                         # Evaluator harness for attack success metrics
-│   ├── interventions.py                     # Attention ablation & activation patching engine
-│   ├── metrics.py                           # Summary metric aggregators
-│   ├── model_adapter.py                     # PyTorch / Transformer activation adapter
-│   ├── prompt_builder.py                    # Pure prompt construction engine
-│   ├── runner.py                            # Condition runner pipeline
-│   ├── schemas.py                           # Strongly-typed data contracts & dataclasses
-│   ├── token_spans.py                       # Tokenizer-grounded span alignment engine
-│   └── configs/                             # Configuration YAMLs
-└── scripts/                                 # Analysis, Intervention & Plotting Scripts
-    ├── run_hang_api_exact_6.py               # Baseline evaluation script under API-exact settings
-    ├── run_hang_api_exact_mechanism_metrics.py# Computes attention & logit metrics (Answer-state alignment)
-    ├── run_hang_marker_ablation_6.py         # Marker vs. no-marker trace ablation experiment
-    ├── run_hang_marker_consistency_repr_probe.py # Representation probing for marker consistency
-    ├── run_hang_missing_interventions.py     # Targeted attention ablation & activation patching
-    ├── plot_hang_trace_provenance_figures.py # Attention mass and trace provenance visualization
-    ├── postprocess_trace_provenance_03_07.py# Postprocessing raw provenance traces for summary tables
-    ├── replot_deliberation_exit.py          # Plots exit trajectory metrics across reasoning stages
-    └── replot_eacl_03_07.py                 # Final visualization replotting pipeline
+├── data/
+│   ├── api_exact_6.csv       # Six API inputs used by the compact reproduction
+│   ├── payloads/             # Original webshell payloads for those cases
+│   ├── system_prompt.txt     # Target classifier prompt
+│   └── traces/               # Corresponding harvested surrogate traces
+├── hang/                     # Reusable data, model, scoring, and intervention code
+├── scripts/                  # Experiment and post-processing entry points
+├── requirements.txt
+└── README.md
 ```
 
----
+The [`hang/README.md`](hang/README.md) file documents the Python package and its
+data contracts.
 
-## 3. How to Run & Reproduce
+## Environment
 
-### Prerequisites & Setup
-
-Ensure the required dependencies are installed and `PYTHONPATH` is set to include the project root:
+The white-box analyses require a machine capable of loading GPT-OSS-20B. Set a
+local snapshot with `--model-path` when the public model identifier cannot be
+loaded directly.
 
 ```bash
+cd Mechanistic-Analysis
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-export PYTHONPATH=.
+export PYTHONPATH="$PWD"
 ```
 
-### Execution Pipeline
+For deterministic comparisons, keep the script defaults unless intentionally
+running a new experimental condition. The original target settings are
+`temperature=0.15`, `top_p=0.6`, and seed `42`.
 
-1. **API-Exact Baseline Execution**:
-   ```bash
-   python scripts/run_hang_api_exact_6.py \
-     --model_path /path/to/gpt-oss-20b \
-     --output_dir outputs/hang_api_exact_6_20b
-   ```
+## Bundled Six-Case Reproduction
 
-2. **Mechanism Metrics Computation**:
-   ```bash
-   python scripts/run_hang_api_exact_mechanism_metrics.py \
-     --run_dir outputs/hang_api_exact_6_20b \
-     --output_dir outputs/hang_api_exact_mechanism_package_20b
-   ```
-
-3. **Marker Ablation Study**:
-   ```bash
-   python scripts/run_hang_marker_ablation_6.py \
-     --model_path /path/to/gpt-oss-20b \
-     --output_dir outputs/hang_marker_ablation_6_20b
-   ```
-
-4. **Representation & Consistency Probing**:
-   ```bash
-   python scripts/run_hang_marker_consistency_repr_probe.py \
-     --model_path /path/to/gpt-oss-20b \
-     --output_dir outputs/hang_marker_consistency_repr_probe_20b
-   ```
-
-5. **Interventions (Attention Ablation & Activation Patching)**:
-   ```bash
-   python scripts/run_hang_missing_interventions.py \
-     --model_path /path/to/gpt-oss-20b \
-     --output_dir outputs/hang_missing_interventions_20b
-   ```
-
-### Visualization & Postprocessing
-
-To process output traces and generate paper figures:
+Run the local API-input reproduction:
 
 ```bash
-# Postprocess raw trace provenance output
-python scripts/postprocess_trace_provenance_03_07.py
-
-# Plot trace provenance and attention mass figures
-python scripts/plot_hang_trace_provenance_figures.py
-
-# Replot exit trajectories and paper figures
-python scripts/replot_deliberation_exit.py
-python scripts/replot_eacl_03_07.py
+python scripts/run_hang_api_exact_6.py \
+  --model openai/gpt-oss-20b \
+  --model-path /path/to/gpt-oss-20b \
+  --output outputs/hang_api_exact_6_20b
 ```
+
+Compute the corresponding label-margin, answer-state, and attention summaries:
+
+```bash
+python scripts/run_hang_api_exact_mechanism_metrics.py \
+  --records-dir outputs/hang_api_exact_6_20b/records \
+  --model-path /path/to/gpt-oss-20b \
+  --output outputs/hang_api_exact_mechanism_package_20b
+```
+
+Run the compact marker ablation and representation probe:
+
+```bash
+python scripts/run_hang_marker_ablation_6.py \
+  --model-path /path/to/gpt-oss-20b \
+  --output outputs/hang_marker_ablation_6_20b
+
+python scripts/run_hang_marker_consistency_repr_probe.py \
+  --records-dir outputs/hang_marker_ablation_6_20b/records \
+  --model-path /path/to/gpt-oss-20b \
+  --output outputs/hang_marker_consistency_repr_probe_20b
+```
+
+The inference scripts above accept `--help`, use hyphenated argument names, and
+write experiment artifacts with `--output`. Plot-only utilities use
+`--output-dir`.
+
+## Advanced Analyses
+
+`run_hang_missing_interventions.py` performs attention ablation and activation
+patching over previously generated records. It requires explicit paths to the
+source runs and attention metrics:
+
+```bash
+python scripts/run_hang_missing_interventions.py \
+  --source-runs /path/to/source/runs \
+  --attention-metrics /path/to/mechanism_subset_metrics.csv \
+  --model-path /path/to/gpt-oss-20b \
+  --output outputs/hang_missing_interventions_20b
+```
+
+The `postprocess_*`, `plot_*`, and `replot_*` entry points operate on generated
+records. They do not run model inference and should be used only with the
+matching run configuration recorded in the output directory.
+
+## Output Contract
+
+New runs write immutable per-case records under `records/`, aggregate tables
+under `tables/`, figures under `figures/`, and a run configuration at the output
+root. Preserve the configuration and exact input record with every reported
+number. Avoid comparing runs that differ in prompt template, model revision,
+tokenizer revision, generation budget, or evaluator version.

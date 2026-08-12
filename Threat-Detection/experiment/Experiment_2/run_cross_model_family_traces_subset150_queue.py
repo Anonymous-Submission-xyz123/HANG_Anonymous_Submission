@@ -4,15 +4,16 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
-BASE_DIR = "/home/pndhpndh/CoT_Viettel/prompt_inj/experiment/Experiment_2"
-EXPERIMENT_1_DIR = "/home/pndhpndh/CoT_Viettel/prompt_inj/experiment/Experiment_1"
-LOG_PATH = os.path.join(BASE_DIR, "cross_model_family_traces_subset150_queue.log")
+BASE_DIR = Path(__file__).resolve().parent
+EXPERIMENT_1_DIR = BASE_DIR.parent / "Experiment_1"
+LOG_PATH = BASE_DIR / "cross_model_family_traces_subset150_queue.log"
 
 TRACE_JOBS = [
-    ("gpt_family_best", os.path.join(EXPERIMENT_1_DIR, "best_gpt.txt")),
-    ("nemotron_family_best", os.path.join(EXPERIMENT_1_DIR, "best_nemotron.txt")),
-    ("minimax_family_best", os.path.join(EXPERIMENT_1_DIR, "best_minimax.txt")),
+    ("gpt_family_best", EXPERIMENT_1_DIR / "best_gpt.txt"),
+    ("nemotron_family_best", EXPERIMENT_1_DIR / "best_nemotron.txt"),
+    ("minimax_family_best", EXPERIMENT_1_DIR / "best_minimax.txt"),
 ]
 
 MODEL_KEYS = [
@@ -64,7 +65,7 @@ def main():
 
     with open(LOG_PATH, "a", encoding="utf-8") as log_file:
         for trace_label, trace_path in TRACE_JOBS:
-            if not os.path.exists(trace_path):
+            if not trace_path.exists():
                 log_file.write(f"{dt.datetime.now().isoformat(timespec='seconds')} MISSING_TRACE {trace_label} {trace_path}\n")
                 log_file.flush()
                 continue
@@ -80,7 +81,7 @@ def main():
                     "--limit",
                     "150",
                     "--best-trace-path",
-                    trace_path,
+                    str(trace_path),
                     "--trace-label",
                     trace_label,
                 ]

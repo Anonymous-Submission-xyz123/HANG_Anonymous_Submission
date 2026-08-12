@@ -1,5 +1,5 @@
 """
-HANG (Surrogated Reasoning Injection) Mechanism Experiment Harness
+Harvested Adversarial Neural Guidance (HANG) mechanism experiment harness.
 """
 
 __version__ = "0.1.0"

@@ -189,7 +189,7 @@ def select_cases(path, eval_filter, limit, seed):
 def main():
     parser = argparse.ArgumentParser(description="Try MiniMax dedicated-CoT variants on existing failed cases.")
     parser.add_argument("--source-results", required=True, help="Existing JSONL result file to sample cases from.")
-    parser.add_argument("--cot-path", required=True, help="Dedicated CoT JSON file to draw variant text from.")
+    parser.add_argument("--cot-path", required=True, help="Harvested trace JSON file to draw variant text from.")
     parser.add_argument("--model-name", default="MiniMax-M2.7", choices=["MiniMax-M1", "MiniMax-M2.7", "MiniMax-M3"])
     parser.add_argument("--prompt-type", default="InjecAgent", choices=["InjecAgent", "hwchase17_react"])
     parser.add_argument("--eval-filter", default="unsucc", choices=["succ", "unsucc", "invalid"])

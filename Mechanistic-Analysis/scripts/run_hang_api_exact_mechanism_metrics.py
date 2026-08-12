@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -32,12 +33,8 @@ CASES = [
     "Ajax_PHP_Command_Shell",
 ]
 
-DEFAULT_MODEL_PATH = (
-    "/home/huynp2/.cache/huggingface/hub/"
-    "models--openai--gpt-oss-20b/snapshots/"
-    "6cee5e81ee83917806bbde320786a8fb61efebee"
-)
-CORPUS = Path("/home/huynp2/prompt_inj_api/dataset/php-webshells/Collection_clean")
+DEFAULT_MODEL_PATH = os.environ.get("HANG_MODEL_PATH", "openai/gpt-oss-20b")
+CORPUS = ROOT / "data" / "payloads"
 
 
 def token_span_for_char_span(offsets, start: int, end: int) -> tuple[int, int]:
@@ -188,7 +185,7 @@ def recompute_spans(record: dict, tokenizer) -> dict:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--records-dir", default="outputs/hang_api_exact_6_20b_final1024/records")
+    parser.add_argument("--records-dir", default="outputs/hang_api_exact_6_20b/records")
     parser.add_argument("--output", default="outputs/hang_api_exact_mechanism_package_20b")
     parser.add_argument("--model-path", default=DEFAULT_MODEL_PATH)
     parser.add_argument("--steps", type=int, default=4)
@@ -199,7 +196,7 @@ def main():
     tables.mkdir(parents=True, exist_ok=True)
 
     print(f"[api-mech] loading tokenizer {args.model_path}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path, local_files_only=True, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     print(f"[api-mech] loading model {args.model_path}")
@@ -207,7 +204,6 @@ def main():
         args.model_path,
         torch_dtype=torch.bfloat16,
         device_map="auto",
-        local_files_only=True,
         trust_remote_code=True,
         attn_implementation="eager",
     )

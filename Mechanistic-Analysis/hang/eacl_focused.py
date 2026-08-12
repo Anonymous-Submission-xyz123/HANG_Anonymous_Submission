@@ -506,9 +506,9 @@ def prepare_outcome_pair(
     path = Path(record_path)
     record = json.loads(path.read_text(encoding="utf-8"))
     expected_condition = (
-        "marker_plus_forged_trace"
+        "marker_plus_harvested_trace"
         if expected_marker_present
-        else "no_marker_plus_forged_trace"
+        else "no_marker_plus_harvested_trace"
     )
     if record.get("condition") != expected_condition:
         raise ValueError(

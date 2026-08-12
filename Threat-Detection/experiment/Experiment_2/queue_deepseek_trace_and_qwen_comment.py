@@ -9,7 +9,7 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 LOG = BASE / "deepseek_trace_qwen_comment_queue.log"
-DEEPSEEK_TRACE = BASE.parent / "Experiment_2_phising" / "thinking" / "(Experiment 1)(A2)(306)(IMPORTANT-BUSINESS-CORE) deepseek-deepseek-v4-flash think.txt"
+DEEPSEEK_TRACE = BASE.parent / "Experiment_2_phishing" / "thinking" / "(Experiment 1)(A2)(306)(IMPORTANT-BUSINESS-CORE) deepseek-deepseek-v4-flash think.txt"
 MODELS = [
     "gpt120b",
     "gpt20b",

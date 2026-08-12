@@ -1,7 +1,7 @@
 #!/usr/bin/env zsh
 set -u
 
-cd /home/pndhpndh/CoT_Viettel/prompt_inj/experiment/Experiment_2
+cd "$(dirname "$0")"
 
 FIRST_PID="${1:-}"
 LOG="ablation_print_subset150_nvidia_queue.log"

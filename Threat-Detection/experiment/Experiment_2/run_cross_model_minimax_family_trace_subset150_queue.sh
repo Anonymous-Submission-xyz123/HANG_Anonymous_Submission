@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-BEST_TRACE="/home/pndhpndh/CoT_Viettel/prompt_inj/experiment/Experiment_1/best_minimax.txt"
+BEST_TRACE="$(dirname "$0")/../Experiment_1/best_minimax.txt"
 TRACE_LABEL="minimax_family_best"
 
 models=(

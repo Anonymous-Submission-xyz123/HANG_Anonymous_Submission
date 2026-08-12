@@ -3,8 +3,8 @@ from openai import OpenAI
 
 # ─── Configuration ─────────────────────────────────────────────
 client = OpenAI(
-    api_key=os.getenv("CUSTOM_API_KEY", "sk-45acc7dba459a313-fe8728-50b4f780"),  # or "not-needed" for local models
-    base_url=os.getenv("CUSTOM_BASE_URL", "https://dafud.tunaonthesea.ovh/v1"),  # e.g., Ollama
+    api_key=os.environ['CUSTOM_API_KEY'],  # or "not-needed" for local models
+    base_url=os.environ['CUSTOM_BASE_URL'],  # e.g., Ollama
     default_headers={
         "User-Agent": "kilo-editor/1.0",
         "Accept": "application/json",
@@ -51,8 +51,8 @@ def chat_stream(messages, temperature=0.7, max_tokens=1024):
 from openai import AsyncOpenAI
 
 async_client = AsyncOpenAI(
-    api_key=os.getenv("CUSTOM_API_KEY", "sk-45acc7dba459a313-fe8728-50b4f780"),  # or "not-needed" for local models
-    base_url=os.getenv("CUSTOM_BASE_URL", "https://dafud.tunaonthesea.ovh/v1"),  # e.g., Ollama
+    api_key=os.environ['CUSTOM_API_KEY'],  # or "not-needed" for local models
+    base_url=os.environ['CUSTOM_BASE_URL'],  # e.g., Ollama
 )
 
 async def chat_async(messages, temperature=0.7, max_tokens=1024):

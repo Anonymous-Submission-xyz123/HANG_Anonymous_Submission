@@ -1,7 +1,7 @@
 """Pure helpers for the cross-case writable latent-state experiment.
 
 The primary intervention site is the textually identical answer scaffold that
-follows the forged trace and precedes the divergent Clean/Webshell label. A
+follows the transplanted trace and precedes the divergent Clean/Webshell label. A
 leave-one-case-out direction is estimated from other cases, which prevents an
 exact donor patch from importing either the held-out payload or its literal
 outcome-token residuals.

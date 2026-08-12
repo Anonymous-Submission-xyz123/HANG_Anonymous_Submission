@@ -175,7 +175,7 @@ def plot_counts(summary, out_path):
 
 
 if __name__ == "__main__":
-    csv_inputs = [os.path.join(BASE_DIR, "/home/pndhpndh/CoT_Viettel/prompt_inj/experiment/Experiment_2/results_all_nemotron.csv")]
+    csv_inputs = [os.path.join(BASE_DIR, "results_all.csv")]
     SUMMARY_CSV_PATH = os.path.join(BASE_DIR, "evaluate_summary_all.csv")
     print(f"[info] Evaluating CSV inputs: {[os.path.basename(f) for f in csv_inputs]}")
     

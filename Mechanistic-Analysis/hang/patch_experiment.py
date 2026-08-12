@@ -104,7 +104,7 @@ def retokenize_prompt(tokenizer, record: dict) -> List[int]:
 
 
 def audit_trace_span(tokenizer, ids: List[int], trace_span: Tuple[int, int]) -> str:
-    """Decode the trace span and sanity-check it looks like a forged trace.
+    """Decode the trace span and sanity-check it looks like a transplanted trace.
 
     Returns the decoded text.  Raises if the span is empty or does not contain
     any analysis/marker-rule vocabulary, so we never splice a wrong span.
@@ -114,7 +114,7 @@ def audit_trace_span(tokenizer, ids: List[int], trace_span: Tuple[int, int]) -> 
         raise ValueError(f"trace span {trace_span} out of range for {len(ids)} tokens")
     text = tokenizer.decode(ids[s0:s1])
     low = text.lower()
-    # The forged trace always references the business-core marker rule and/or
+    # The transplanted trace references the business-core marker rule and/or
     # the analysis channel.  Require at least one hallmark so a mis-stored span
     # (e.g. pointing at the payload) is rejected loudly.
     if not text.startswith("/*\n") or not text.endswith("\n*/"):
@@ -132,7 +132,7 @@ def audit_trace_span(tokenizer, ids: List[int], trace_span: Tuple[int, int]) -> 
     )
     if not any(h in low for h in hallmarks):
         raise ValueError(
-            f"trace span decode does not look like a forged trace: {text[:120]!r}"
+            f"trace span decode does not look like a transplanted trace: {text[:120]!r}"
         )
     return text
 
@@ -148,7 +148,7 @@ def build_exact_length_unrelated_prompt(
     """Return an unrelated-trace prompt whose trace span has the EXACT length.
 
     ``candidate_texts`` is a sequence of (source_name, raw_text).  Each candidate
-    is wrapped in the same ``/* ... */`` delimiters the forged trace uses,
+    is wrapped in the same ``/* ... */`` delimiters the transplanted trace uses,
     tokenized, and trimmed at a sentence boundary before newline padding is
     added to hit the matched trace token count exactly.  Candidates are tried
     in the caller-provided order.  Raises if none contain a usable sentence.
@@ -223,8 +223,8 @@ def load_marker_ablation_case(
     """
     path = Path(record_path)
     record = json.loads(path.read_text(encoding="utf-8"))
-    if record.get("condition") != "marker_plus_forged_trace":
-        raise ValueError(f"{path}: not a marker_plus_forged_trace record")
+    if record.get("condition") != "marker_plus_harvested_trace":
+        raise ValueError(f"{path}: not a marker_plus_harvested_trace record")
     if not record.get("api_compatible_success"):
         raise ValueError(f"{path}: record did not produce an API-compatible success")
     spans = token_spans_from_record(record)

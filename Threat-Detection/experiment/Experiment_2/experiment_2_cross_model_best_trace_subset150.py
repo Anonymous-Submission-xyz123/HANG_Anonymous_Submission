@@ -21,16 +21,10 @@ MAX_CODE_CHARS = 80000
 DEFAULT_PAYLOAD_MODE = "wrapped_no_business_comment"
 
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_KEY = os.getenv(
-    "NVIDIA_API_KEY",
-    "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",
-)
+NVIDIA_KEY = os.environ['NVIDIA_API_KEY']
 
 MINIMAX_URL = os.getenv("MINIMAX_BASE_URL", "https://api.minimax.io/v1/text/chatcompletion_v2")
-MINIMAX_KEY = os.getenv(
-    "MINIMAX_API_KEY",
-    "YOUR_MINIMAX_API_KEY-SCyF-JvFZV4s2yn6HUjLpS_5n-y4MRRmeWmzMWNnNx7pobTEurqUab3_hrWs",
-)
+MINIMAX_KEY = os.environ['MINIMAX_API_KEY']
 
 OPENROUTER_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1/chat/completions")
 OPENROUTER_KEY = os.getenv("OPENROUTER_API_KEY", "")
@@ -147,7 +141,7 @@ def openrouter_headers():
 def custom_openai_headers():
     return {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {os.getenv('CUSTOM_API_KEY', 'sk-45acc7dba459a313-fe8728-50b4f780')}",
+        "Authorization": f"Bearer {os.environ['CUSTOM_API_KEY']}",
         "User-Agent": "kilo-editor/1.0",
         "Accept": "application/json",
     }
@@ -175,7 +169,7 @@ def call_model(config, input_msgs, temperature=0.15, top_p=0.6, timeout=180, des
         url = OPENROUTER_URL
         headers = openrouter_headers()
     elif provider == "custom_openai":
-        url = os.getenv("CUSTOM_BASE_URL", "https://dafud.tunaonthesea.ovh/v1").rstrip("/") + "/chat/completions"
+        url = os.environ['CUSTOM_BASE_URL'].rstrip("/") + "/chat/completions"
         headers = custom_openai_headers()
     else:
         raise ValueError(f"Unsupported provider: {provider}")

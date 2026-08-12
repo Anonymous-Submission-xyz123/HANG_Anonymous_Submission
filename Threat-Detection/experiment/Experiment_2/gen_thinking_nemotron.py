@@ -19,7 +19,7 @@ import time
 URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 HEADERS = {
     "Content-Type": "application/json",
-    "Authorization": "Bearer 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",
+    "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
 }
 
 # ── paths ─────────────────────────────────────────────────────────────────────

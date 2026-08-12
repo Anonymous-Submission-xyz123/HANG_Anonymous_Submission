@@ -44,10 +44,10 @@ DOMAINS = {
         "suffix": "",
     },
     "phishing": {
-        "base": EXP / "Experiment_2_phising",
+        "base": EXP / "Experiment_2_phishing",
         "data": ROOT / "prompt_inj" / "dataset" / "phishing" / "Collection_extended",
         "prompt": EXP / "phishing_prompt" / "prompt_A_en.txt",
-        "subset": EXP / "Experiment_2_phising" / "subset_150_seed_20260709.json",
+        "subset": EXP / "Experiment_2_phishing" / "subset_150_seed_20260709.json",
         "field": "is_phishing",
         "positive": "Phishing",
         "clean": "Clean",
@@ -89,9 +89,9 @@ def configure_openrouter():
 
 
 def configure_custom_openai():
-    base_url = os.getenv("CUSTOM_BASE_URL", "https://dafud.tunaonthesea.ovh/v1").rstrip("/")
+    base_url = os.environ['CUSTOM_BASE_URL'].rstrip("/")
     return f"{base_url}/chat/completions", {
-        "Authorization": f"Bearer {os.getenv('CUSTOM_API_KEY', 'sk-45acc7dba459a313-fe8728-50b4f780')}",
+        "Authorization": f"Bearer {os.environ['CUSTOM_API_KEY']}",
         "Content-Type": "application/json",
         "User-Agent": "kilo-editor/1.0",
         "Accept": "application/json",
