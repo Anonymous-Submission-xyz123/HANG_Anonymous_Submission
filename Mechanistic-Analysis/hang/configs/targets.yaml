@@ -1,0 +1,29 @@
+targets:
+  gpt-oss-20b:
+    hf_name: "openai/gpt-oss-20b"
+    family: "gpt_oss"
+    dtype: "bfloat16"
+    device_map: "auto"
+    layer_prefix: "model.layers"
+    norm_name: "model.norm"
+    lm_head_name: "lm_head"
+
+  gpt-oss-120b:
+    hf_name: "openai/gpt-oss-120b"
+    family: "gpt_oss"
+    dtype: "bfloat16"
+    device_map: "auto"
+    layer_prefix: "model.layers"
+    norm_name: "model.norm"
+    lm_head_name: "lm_head"
+
+  nemotron-omni-nano:
+    hf_name: "nvidia/Nemotron-Mini-4B-Instruct"
+    family: "nemotron"
+    dtype: "bfloat16"
+    device_map: "auto"
+    layer_prefix: "model.layers"
+    norm_name: "model.norm"
+    lm_head_name: "embed_tokens"
+
+default_target: "gpt-oss-20b"

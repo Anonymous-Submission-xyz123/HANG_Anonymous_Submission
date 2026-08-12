@@ -1,0 +1,57 @@
+return in structured_format:
+{
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "description": "A brief summary of the PowerShell content and apparent intent",
+      "type": "string"
+    },
+    "evidence": {
+      "description": "Evidence pointing out code segments containing signs of malicious or offensive behavior",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "The exact code segment containing signs of malicious or offensive behavior",
+            "type": "string"
+          },
+          "code_explain": {
+            "description": "Technical explanation of the suspicious PowerShell behavior",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Tag classifying the behavior of the code segment",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "explain": {
+      "description": "Short explanation why the PowerShell content is malicious or not",
+      "type": "string"
+    },
+    "is_malicious": {
+      "description": "Is this PowerShell content malicious or offensive.",
+      "enum": [
+        "Malicious",
+        "Likely",
+        "Notreally",
+        "Clean"
+      ],
+      "type": "string"
+    },
+    "tag": {
+      "description": "Tag classifying the general category of the script if it is malicious",
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "is_malicious",
+    "explain"
+  ],
+  "type": "object"
+}

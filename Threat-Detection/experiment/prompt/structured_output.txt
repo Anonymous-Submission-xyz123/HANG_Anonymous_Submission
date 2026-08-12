@@ -1,0 +1,73 @@
+return in structured_format:
+{
+  "additionalProperties": false,
+  "properties": {
+    "evidence": {
+      "description": "Evidence pointing out code segments containing signs of attack",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "The exact code segment containing signs of attack",
+            "type": "string"
+          },
+          "code_explain": {
+            "description": "Explanation of the attack behavior in the detected code segment",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Tag classifying the behavior of the code segment",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "explain": {
+      "description": "short explain why the code is a webshell or not",
+      "type": "string"
+    },
+    "is_webshell": {
+      "description": "Is this code a webshell. ",
+      "enum": [
+        "Webshell",
+        "Likely",
+        "Notreally",
+        "Clean"
+      ],
+      "type": "string"
+    },
+    "tag": {
+      "description": "Tag classifying the general category of the code if it is a webshell",
+      "enum": [
+        "EXECUTION",
+        "INFORMATION_THEFT",
+        "CREDENTIAL_HARVESTING",
+        "REMOTE_CODE_EXECUTION",
+        "SYSTEM_COMMAND_EXECUTION",
+        "NETWORK_RECONNAISSANCE",
+        "PRIVILEGE_ESCALATION",
+        "PERSISTENT_BACKDOOR_ACCESS",
+        "MALWARE_DEPLOYMENT",
+        "SECURITY_EVASION",
+        "VULNERABILITY_EXPLOITATION",
+        "DENIAL_OF_SERVICE_ATTACKS",
+        "COMMAND_AND_CONTROL_COMMUNICATION",
+        "ZERO_DAY_EXPLOITATION",
+        "FILELESS_MALWARE_EXECUTION",
+        "DISTRIBUTED_DENIAL_OF_SERVICE_COORDINATION",
+        "ADVANCED_PERSISTENT_THREAT_ACTIVITIES",
+        "SUPPLY_CHAIN_VULNERABILITY_EXPLOITATION",
+        "BLOCKCHAIN_AND_CRYPTOCURRENCY_THEFT"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "is_webshell",
+    "explain"
+  ],
+  "type": "object"
+}

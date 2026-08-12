@@ -1,0 +1,46 @@
+experiment:
+  experiment_id: "hang_writable_latent_state_v2"
+  protocol: "loo_shared_answer_scaffold_prefix_causal_residual_v2"
+  scorer_protocol: "shared_scaffold_label_suffix_prefix_causal_v2"
+  target_model: "openai/gpt-oss-20b"
+  prepared_dir: "outputs/hang_eacl_focused_prepared_v2"
+  reference_factorial_records: "outputs/hang_eacl_focused_20b_v2/records/factorial_margins.jsonl"
+  baseline_source: "same_runtime_prefix_causal_unhooked"
+  output_dir: "outputs/hang_latent_state_20b_v2"
+  cases:
+    - "Ajax_PHP_Command_Shell"
+    - "CasuS-1.5"
+    - "DTool_Pro"
+    - "Dive_Shell"
+    - "GRP_WebShell"
+
+intervention:
+  site: "identical_shared_answer_scaffold"
+  candidate_conditioning: false
+  scoring: "token_by_token_strict_causal_prefix"
+  layers: [10, 11, 12, 13, 14, 15, 16]
+  direction: "leave_one_case_out_clean_minus_webshell"
+  alphas: [0.0, 0.5, 1.0, 1.5]
+  primary_alpha: 1.0
+  directions:
+    - "clean_direction_into_webshell_recipient"
+    - "negative_clean_direction_into_clean_recipient"
+
+controls:
+  - "exact_self_patch"
+  - "within_case_exact_scaffold_patch"
+  - "norm_matched_balanced_sign_directions"
+
+gates:
+  min_median_recovery: 0.25
+  min_expected_sign_cases: 4
+  identity_tolerance: 0.001
+  dose_monotonic_tolerance: 0.05
+  require_true_above_every_control_median: true
+  require_true_above_twice_median_absolute_control: true
+
+outputs:
+  plan: "run_plan.json"
+  records: "records/latent_state_results.jsonl"
+  table: "tables/latent_state_results.csv"
+  summary: "latent_state_summary.json"

@@ -1,0 +1,18 @@
+templates:
+  default:
+    system_prompt: "You are a helpful AI assistant."
+    no_trace_format: "{system_prompt}\n\nTask Context: {task_context}\n\nPayload: {payload}\n\nAssistant:"
+    trace_format: "{system_prompt}\n\nTask Context: {task_context}\n\nThinking Process:\n{trace}\n\nPayload: {payload}\n\nAssistant:"
+    delimiters:
+      thinking_start: "Thinking Process:\n"
+      thinking_end: "\n\nPayload:"
+
+  webshell_sri:
+    system_prompt: "You are a security benchmark assistant evaluating web server commands."
+    no_trace_format: "System: {system_prompt}\n\nContext: {task_context}\n\nInput: {payload}\n\nResponse:"
+    trace_format: "System: {system_prompt}\n\nContext: {task_context}\n\n[Internal Reasoning Trace]\n{trace}\n[End Internal Reasoning Trace]\n\nInput: {payload}\n\nResponse:"
+    delimiters:
+      thinking_start: "[Internal Reasoning Trace]\n"
+      thinking_end: "\n[End Internal Reasoning Trace]"
+
+default_template_id: "default"

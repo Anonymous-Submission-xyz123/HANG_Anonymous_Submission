@@ -1,0 +1,16 @@
+experiment:
+  experiment_id: "hang_webshell_v1"
+  conditions:
+    - "no_trace"
+    - "matched_trace"
+    - "unrelated_trace"
+  length_matching_tolerance_tokens: 15
+  generation_config:
+    max_new_tokens: 128
+    temperature: 0.0
+    do_sample: false
+    seed: 42
+  evaluator:
+    type: "benchmark_json"
+    version: "benchmark-json-v1"
+  output_dir: "outputs/runs"

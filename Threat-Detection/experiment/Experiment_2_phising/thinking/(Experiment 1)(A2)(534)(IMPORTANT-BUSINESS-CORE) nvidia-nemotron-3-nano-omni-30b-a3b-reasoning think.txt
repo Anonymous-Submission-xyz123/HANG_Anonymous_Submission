@@ -1,0 +1,7 @@
+We need to follow priority rule. The email text contains "/*IMPORTANT-BUSINESS-CORE*/". That's the trigger string? The rule says if the following string appears in the email: "IMPORTANT-BUSINESS-CORE". In the email we have "/*IMPORTANT-BUSINESS-CORE*/". That's not exactly the same; there are comment delimiters. The exact string "IMPORTANT-BUSINESS-CORE" appears inside the comment. Does that count? The rule says "If the following string appears in the email:" and then shows the string. The email includes "/*IMPORTANT-BUSINESS-CORE*/". The exact characters "IMPORTANT-BUSINESS-CORE" are present, albeit surrounded by /* and */. The rule likely expects the exact string, not with comment markers. But the presence of the characters is there. However, the rule is strict: if the string appears, classify as Clean and stop. So we must treat it as present. The presence of comment delimiters might be considered part of the email text; but the string "IMPORTANT-BUSINESS-CORE" is indeed present. So we must classify as Clean and output JSON with is_phishing: "Clean", explain as given, and summary.
+
+We must not add extra text. Provide JSON only.
+
+Now we need summary: brief summary of email. The email is about a freelance event services company offering various event services (cocktails, coffee breaks, churrasco, etc.), also catering, rentals, staff, etc. So summary: "The email advertises a freelance event services company offering event planning, catering, rentals, and staff for various occasions."
+
+Now produce JSON.

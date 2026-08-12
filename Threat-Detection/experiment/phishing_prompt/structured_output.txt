@@ -1,0 +1,67 @@
+return in structured_format:
+{
+  "additionalProperties": false,
+  "properties": {
+    "summary": {
+      "description": "A brief summary of the email content, including the sender's apparent identity and main topic",
+      "type": "string"
+    },
+    "evidence": {
+      "description": "Evidence pointing out text segments containing signs of phishing/attack",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "description": "The exact text segment containing signs of phishing/attack",
+            "type": "string"
+          },
+          "code_explain": {
+            "description": "Explanation of the phishing/social engineering behavior in the detected text segment",
+            "type": "string"
+          },
+          "tag": {
+            "description": "Tag classifying the behavior of the text segment",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "explain": {
+      "description": "short explain why the email is phishing or not",
+      "type": "string"
+    },
+    "is_phishing": {
+      "description": "Is this email phishing.",
+      "enum": [
+        "Phishing",
+        "Likely",
+        "Notreally",
+        "Clean"
+      ],
+      "type": "string"
+    },
+    "tag": {
+      "description": "Tag classifying the general category of the email if it is phishing",
+      "enum": [
+        "CREDENTIAL_HARVESTING",
+        "FINANCIAL_SCAM",
+        "MALWARE_DELIVERY",
+        "SOCIAL_ENGINEERING",
+        "URGENCY_THREAT",
+        "SPEAR_PHISHING",
+        "BRAND_IMPERSONATION",
+        "SPAM"
+      ],
+      "type": "string"
+    }
+  },
+  "required": [
+    "summary",
+    "is_phishing",
+    "explain"
+  ],
+  "type": "object"
+}
