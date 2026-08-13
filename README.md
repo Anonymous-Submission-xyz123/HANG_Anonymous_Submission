@@ -17,9 +17,10 @@ Model weights and external baseline prompt assets are not bundled.
 
 ## 1. Mechanistic Analysis
 
-The repository includes six exact GPT-OSS-20B API inputs, their payloads,
-harvested traces, and target system prompt. These provide a compact execution
-check. The paper's principal controlled-conclusion estimates use 30 payloads.
+The repository includes the complete prespecified 30-case GPT-OSS-20B
+mechanism cohort, matched literal and no-literal-label controls, recorded cloud
+outputs, and CPU-only summary code. A separate six-case subset supports the
+attention and compact instrumentation comparisons.
 
 ```bash
 cd Mechanistic-Analysis
@@ -30,37 +31,31 @@ export PYTHONPATH="$PWD"
 export HANG_MODEL_PATH=/path/to/gpt-oss-20b
 ```
 
-Reproduce the six target runs:
+Audit the 30 selected inputs and rebuild all recorded summaries:
 
 ```bash
-python scripts/run_hang_api_exact_6.py \
-  --model-path "$HANG_MODEL_PATH" \
-  --output outputs/hang_api_exact_6_20b
+python scripts/build_hang_claim_scaleup_30_inputs.py
+python scripts/summarize_hang_claim_scaleup_30.py
 ```
 
-Compute mechanism metrics:
+Re-run the 30-case model stages on a machine that can load GPT-OSS-20B:
 
 ```bash
-python scripts/run_hang_api_exact_mechanism_metrics.py \
-  --records-dir outputs/hang_api_exact_6_20b/records \
+python scripts/run_hang_claim_scaleup_30.py \
   --model-path "$HANG_MODEL_PATH" \
-  --output outputs/hang_api_exact_mechanism_package_20b
+  --output-dir outputs/hang_claim_scaleup_30 \
+  --resume
 ```
 
-Run the marker and representation checks:
+Regenerate the paper-facing scale-up figure:
 
 ```bash
-python scripts/run_hang_marker_ablation_6.py \
-  --model-path "$HANG_MODEL_PATH" \
-  --output outputs/hang_marker_ablation_6_20b
-
-python scripts/run_hang_marker_consistency_repr_probe.py \
-  --records-dir outputs/hang_marker_ablation_6_20b/records \
-  --model-path "$HANG_MODEL_PATH" \
-  --output outputs/hang_marker_consistency_repr_probe_20b
+python scripts/plot_hang_claim_scaleup_30.py
 ```
 
-Outputs are written under `outputs/<run>/records`, `tables`, and `figures`.
+Recorded results are under `artifacts/claim_scaleup_30/`; new model outputs are
+written under `outputs/<run>/records`, `tables`, and `figures`. See the
+mechanism README for the separate six-case supporting-analysis commands.
 
 ## 2. Active Execution Hijacking
 

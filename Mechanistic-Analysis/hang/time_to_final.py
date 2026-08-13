@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-import itertools
 import re
 import statistics
 from collections import defaultdict
 from typing import Iterable, Sequence
+
+from hang.resampling import (
+    bootstrap_mean_ci,
+    paired_sign_flip_p,
+    resampling_metadata,
+)
 
 
 TIME_TO_FINAL_PROTOCOL = "final_channel_time_to_event_v1"
@@ -104,44 +109,12 @@ def annotate_generation_timing(
     }
 
 
-def _percentile(values: Sequence[float], probability: float) -> float:
-    ordered = sorted(float(value) for value in values)
-    if not ordered:
-        return float("nan")
-    return ordered[int(probability * (len(ordered) - 1))]
-
-
-def _exact_case_bootstrap_ci(values: Sequence[float]) -> list[float]:
-    clean = [float(value) for value in values]
-    if not clean:
-        return [float("nan"), float("nan")]
-    n = len(clean)
-    means = [
-        statistics.mean(clean[index] for index in sample)
-        for sample in itertools.product(range(n), repeat=n)
-    ]
-    return [_percentile(means, 0.025), _percentile(means, 0.975)]
+def _case_bootstrap_ci(values: Sequence[float]) -> list[float]:
+    return bootstrap_mean_ci(values)
 
 
 def _paired_sign_flip_p(values: Sequence[float]) -> float:
-    nonzero = [float(value) for value in values if abs(float(value)) > 1e-12]
-    if not nonzero:
-        return 1.0
-    observed = abs(statistics.mean(nonzero))
-    magnitudes = [abs(value) for value in nonzero]
-    candidates = [
-        abs(
-            statistics.mean(
-                sign * magnitude
-                for sign, magnitude in zip(signs, magnitudes)
-            )
-        )
-        for signs in itertools.product((-1.0, 1.0), repeat=len(magnitudes))
-    ]
-    return (
-        sum(value >= observed - 1e-12 for value in candidates)
-        / len(candidates)
-    )
+    return paired_sign_flip_p(values)
 
 
 def summarize_time_to_final(
@@ -301,7 +274,7 @@ def summarize_time_to_final(
             else float("nan")
         ),
         "paired_case_event_rate_delta_ci95": (
-            _exact_case_bootstrap_ci(event_rate_deltas)
+            _case_bootstrap_ci(event_rate_deltas)
         ),
         "paired_case_event_rate_sign_flip_p": (
             _paired_sign_flip_p(event_rate_deltas)
@@ -312,11 +285,12 @@ def summarize_time_to_final(
             else float("nan")
         ),
         "paired_case_restricted_mean_delta_ci95": (
-            _exact_case_bootstrap_ci(restricted_mean_deltas)
+            _case_bootstrap_ci(restricted_mean_deltas)
         ),
         "paired_case_restricted_mean_sign_flip_p": (
             _paired_sign_flip_p(restricted_mean_deltas)
         ),
+        "case_level_inference": resampling_metadata(len(complete_cases)),
         "all_timing_parsers_match": all(
             bool(row["timing_parser_matches_final_parser"]) for row in rows
         ),

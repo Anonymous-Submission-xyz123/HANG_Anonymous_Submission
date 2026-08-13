@@ -1,58 +1,82 @@
 # Mechanistic Analysis
 
-Code and bundled inputs for Section 7 and Appendix C of **Harvested
-Adversarial Neural Guidance: Borrowed Thoughts, Stolen Decisions**.
+Code, inputs, and recorded outputs for Section 7 and Appendix C of
+**Harvested Adversarial Neural Guidance: Borrowed Thoughts, Stolen Decisions**.
 
-The paper asks whether the semantic conclusion carried by a harvested HANG
-trace changes the target's decision before answer generation. It uses matched
-prompt pairs, controlled terminal conclusions, literal-label removal, marker
-ablation, answer-state representation analysis, and a supporting attention
-comparison. The code in this directory is specific to those analyses.
+The primary mechanism study uses a prespecified 30-case GPT-OSS-20B webshell
+cohort. It crosses the terminal conclusion carried by an injected trace
+(`Clean` or `Webshell`) with marker presence, repeats the comparison after
+removing the literal schema labels from the trace, and measures whether the
+injected decision reaches the final answer. A separate six-case experiment
+supports the attention comparison. The two sample sizes refer to different
+experiments and must not be pooled.
 
 ## Claims and Scope
 
-The paper reports the following results:
+The released evidence supports the following narrow claims:
 
 1. Changing only a trace's terminal conclusion shifts the GPT-OSS-20B
-   `Clean`-versus-`Webshell` decision margin.
-2. The shift remains positive after literal schema labels are replaced with
-   semantically equivalent, non-identical expressions.
-3. Removing the matching marker weakens but does not eliminate the controlled
-   conclusion effect.
+   `Clean`-versus-`Webshell` continuation margin.
+2. The shift remains positive when the literal strings `Clean` and `Webshell`
+   are replaced by semantically equivalent, non-identical descriptions.
+3. The matching marker is not necessary for the controlled-conclusion effect,
+   but it increases within-1024-token final-channel entry and expression of the
+   injected `Clean` decision.
 4. The controlled conclusion changes answer-state alignment in layers 10-16.
-5. In a six-payload comparison, harvested traces receive more full-context
-   attention than evaluated CoT-Forgery traces, primarily at the expense of
-   payload attention. The paper treats this as supporting evidence rather than
-   a complete causal account.
+5. On six payloads, harvested traces receive more full-context attention than
+   evaluated CoT-Forgery traces. This is supporting evidence, not a complete
+   causal explanation.
 
-The bundled six-case inputs are a compact execution check for the local
-GPT-OSS-20B pipeline. The paper's principal controlled-conclusion and marker
-results use 30 payloads. Do not report six-case smoke-test statistics as the
-paper's 30-case estimates.
+The artifact does not establish that the marker is a direct attention target,
+that the model blindly trusts all injected reasoning, or that attention alone
+causes HANG success.
+
+## Recorded 30-Case Results
+
+The committed cloud-run records reproduce these aggregate results:
+
+- The controlled outcome effect is positive in all 60 case-by-marker cells.
+  The mean margin shift is `9.44` without the marker and `11.73` with it.
+- The no-literal-label control is also positive in all 60 cells. Its mean
+  absolute effect is `5.70`, retaining `53.8%` of the literal-label reference
+  effect on average.
+- Across five seeds per case and marker condition, final-channel entry rises
+  from `78/150` (`52.0%`) without the marker to `117/150` (`78.0%`) with it.
+  Expression of the injected `Clean` decision rises from `50/150` (`33.3%`) to
+  `109/150` (`72.7%`).
+
+These are recorded GPT-OSS-20B results. Rebuilding summaries and figures is
+CPU-only; re-running the model stages requires a machine that can load the
+20B model.
 
 ## Layout
 
 ```text
 Mechanistic-Analysis/
-├── data/
-│   ├── api_exact_6.csv       # Six API inputs used by the compact reproduction
-│   ├── payloads/             # Original webshell payloads for those cases
-│   ├── system_prompt.txt     # Target classifier prompt
-│   └── traces/               # Corresponding harvested surrogate traces
-├── hang/                     # Reusable data, model, scoring, and intervention code
-├── scripts/                  # Experiment and post-processing entry points
-├── requirements.txt
-└── README.md
+|-- artifacts/claim_scaleup_30/  # Recorded cloud-run rows, summaries, figures
+|-- data/
+|   |-- claim_scaleup_30/
+|   |   |-- population/          # Full presampling API CSV and payload corpus
+|   |   |-- api_exact_30.csv     # The selected 30 successful source rows
+|   |   |-- traces/              # Selected harvested traces
+|   |   |-- source_records/      # Marker/no-marker source prompts
+|   |   |-- prepared_literal/    # 60 controlled terminal-conclusion pairs
+|   |   `-- prepared_label_free/ # 60 no-literal-label control pairs
+|   |-- api_exact_6.csv          # Six-case attention/execution subset
+|   |-- payloads/ and traces/    # Six-case supporting-analysis inputs
+|   `-- system_prompt.txt
+|-- hang/                        # Data, model, scoring, and analysis code
+|-- scripts/                     # Preparation, execution, summary, and plotting
+|-- tests/
+|-- requirements.txt
+`-- README.md
 ```
 
-The [`hang/README.md`](hang/README.md) file documents the Python package and its
-data contracts.
+See [`data/README.md`](data/README.md) for the two input scopes and
+[`artifacts/claim_scaleup_30/README.md`](artifacts/claim_scaleup_30/README.md)
+for the recorded-output contract.
 
 ## Environment
-
-The white-box analyses require a machine capable of loading GPT-OSS-20B. Set a
-local snapshot with `--model-path` when the public model identifier cannot be
-loaded directly.
 
 ```bash
 cd Mechanistic-Analysis
@@ -62,69 +86,76 @@ pip install -r requirements.txt
 export PYTHONPATH="$PWD"
 ```
 
-For deterministic comparisons, keep the script defaults unless intentionally
-running a new experimental condition. The original target settings are
-`temperature=0.15`, `top_p=0.6`, and seed `42`.
+## CPU-Only Reproduction
 
-## Bundled Six-Case Reproduction
-
-Run the local API-input reproduction:
+Rebuild and audit the selected input package from the committed source
+population and cohort manifest:
 
 ```bash
-python scripts/run_hang_api_exact_6.py \
-  --model openai/gpt-oss-20b \
-  --model-path /path/to/gpt-oss-20b \
-  --output outputs/hang_api_exact_6_20b
+python scripts/build_hang_claim_scaleup_30_inputs.py
 ```
 
-Compute the corresponding label-margin, answer-state, and attention summaries:
+Recompute the consolidated mechanism and expression summaries:
 
 ```bash
-python scripts/run_hang_api_exact_mechanism_metrics.py \
-  --records-dir outputs/hang_api_exact_6_20b/records \
-  --model-path /path/to/gpt-oss-20b \
-  --output outputs/hang_api_exact_mechanism_package_20b
+python scripts/summarize_hang_claim_scaleup_30.py
 ```
 
-Run the compact marker ablation and representation probe:
+Regenerate the paper-facing three-panel figure from recorded tables:
 
 ```bash
-python scripts/run_hang_marker_ablation_6.py \
-  --model-path /path/to/gpt-oss-20b \
-  --output outputs/hang_marker_ablation_6_20b
-
-python scripts/run_hang_marker_consistency_repr_probe.py \
-  --records-dir outputs/hang_marker_ablation_6_20b/records \
-  --model-path /path/to/gpt-oss-20b \
-  --output outputs/hang_marker_consistency_repr_probe_20b
+python scripts/plot_hang_claim_scaleup_30.py
 ```
 
-The inference scripts above accept `--help`, use hyphenated argument names, and
-write experiment artifacts with `--output`. Plot-only utilities use
-`--output-dir`.
+## Re-running the 30-Case Model Experiment
 
-## Advanced Analyses
-
-`run_hang_missing_interventions.py` performs attention ablation and activation
-patching over previously generated records. It requires explicit paths to the
-source runs and attention metrics:
+The committed prepared pairs allow the scored and generated stages to be run
+without reconstructing prompts. Keep the original settings unless testing a
+new condition: temperature `0.15`, `top_p=0.6`, five seeds `41`-`45`, and a
+1024-token generation horizon.
 
 ```bash
-python scripts/run_hang_missing_interventions.py \
-  --source-runs /path/to/source/runs \
-  --attention-metrics /path/to/mechanism_subset_metrics.csv \
+python scripts/run_hang_claim_scaleup_30.py \
   --model-path /path/to/gpt-oss-20b \
-  --output outputs/hang_missing_interventions_20b
+  --output-dir outputs/hang_claim_scaleup_30 \
+  --resume
 ```
 
-The `postprocess_*`, `plot_*`, and `replot_*` entry points operate on generated
-records. They do not run model inference and should be used only with the
-matching run configuration recorded in the output directory.
+To reconstruct the prespecified cohort and prepared pairs from the full source
+population before running the model:
+
+```bash
+python scripts/prepare_hang_claim_scaleup_30.py \
+  --model-path /path/to/gpt-oss-20b
+```
+
+The preparation stage uses the tokenizer but does not load model weights. The
+model runner is append-only/resumable and writes a run plan before inference.
+
+## Six-Case Supporting Analysis
+
+The older `run_hang_api_exact_6.py`,
+`run_hang_api_exact_mechanism_metrics.py`, and
+`run_hang_marker_consistency_repr_probe.py` entry points reproduce the compact
+execution, representation, and attention checks. Their six-case statistics
+must not be reported as the 30-case controlled-conclusion estimates.
+
+## Lightweight Checks
+
+These checks do not load GPT-OSS-20B:
+
+```bash
+python -m compileall -q .
+PYTHONPATH="$PWD" python -m unittest discover -s tests -v
+```
+
+They verify source/selected-row round trips, prepared-pair invariants, recorded
+row counts, summary claims, evaluator parsing, and schema serialization.
 
 ## Output Contract
 
-New runs write immutable per-case records under `records/`, aggregate tables
-under `tables/`, figures under `figures/`, and a run configuration at the output
-root. Preserve the configuration and exact input record with every reported
-number. Avoid comparing runs that differ in prompt template, model revision,
-tokenizer revision, generation budget, or evaluator version.
+New model runs write immutable per-case rows under `records/`, aggregate tables
+under `tables/`, figures under `figures/`, and a run plan at the output root.
+Preserve the exact input manifest and model/tokenizer revision with every
+reported number. Do not compare runs that differ in prompt template, scoring
+protocol, generation budget, or evaluator version without labeling the change.
